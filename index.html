@@ -6,6 +6,8 @@
     <title>Rutina 30 Minutos - Rastreador</title>
     <!-- Carga de Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* Estilo base y fuente Inter */
         body {
@@ -395,6 +397,12 @@
         <div class="mb-4">
             <h3 class="font-semibold mb-2 text-white">📈 Historial de Peso</h3>
             
+            <!-- Gráfico de Barras del Peso -->
+            <div class="mb-4 bg-gray-700 rounded-lg p-3">
+                <canvas id="weight-chart" width="400" height="200"></canvas>
+                <p id="weight-chart-message" class="text-center text-gray-400 text-sm mt-2">Agrega mediciones de peso para ver el gráfico</p>
+            </div>
+            
             <!-- Añadir nueva medición -->
             <div class="flex gap-2 mb-3">
                 <input type="number" id="new-weight" placeholder="Peso (kg)" step="0.1" min="30" max="300"
@@ -417,7 +425,7 @@
         
         <!-- Historial de Entrenamientos -->
         <div class="mb-6 p-4 bg-gray-700 rounded-lg">
-            <h3 class="text-lg font-bold mb-3 text-gray-100">� Historial de Entrenamientos</h3>
+            <h3 class="text-lg font-bold mb-3 text-gray-100">Historial de Entrenamientos</h3>
         <div id="history-list" class="space-y-2 max-h-60 overflow-y-auto">
             <p class="text-gray-400" id="loading-history">Cargando historial...</p>
         </div>
@@ -500,6 +508,14 @@
             if (activeButton) {
                 activeButton.classList.remove('bg-gray-700', 'text-gray-300');
                 activeButton.classList.add('bg-orange-500', 'text-white');
+            }
+            
+            // Acciones específicas por sección
+            if (sectionName === 'profile') {
+                // Actualizar gráfico de peso cuando se muestra la sección de perfil
+                setTimeout(() => {
+                    updateWeightChart();
+                }, 100); // Pequeño delay para asegurar que el canvas esté visible
             }
         }
         
@@ -2592,6 +2608,129 @@
             });
 
             container.innerHTML = html;
+            
+            // Actualizar el gráfico de peso
+            updateWeightChart();
+        }
+
+        // --- FUNCIONES DEL GRÁFICO DE PESO ---
+        let weightChart = null;
+
+        function updateWeightChart() {
+            const weightHistory = JSON.parse(localStorage.getItem('weight_history') || '[]');
+            const canvas = document.getElementById('weight-chart');
+            const messageElement = document.getElementById('weight-chart-message');
+            
+            if (!canvas) return;
+
+            // Si no hay datos, mostrar mensaje y ocultar gráfico
+            if (weightHistory.length === 0) {
+                canvas.style.display = 'none';
+                if (messageElement) {
+                    messageElement.style.display = 'block';
+                    messageElement.textContent = 'Agrega mediciones de peso para ver el gráfico';
+                }
+                return;
+            }
+
+            // Mostrar gráfico y ocultar mensaje
+            canvas.style.display = 'block';
+            if (messageElement) {
+                messageElement.style.display = 'none';
+            }
+
+            // Preparar datos (últimos 10 registros, en orden cronológico)
+            const recentHistory = weightHistory.slice(0, 10).reverse();
+            const labels = recentHistory.map(entry => {
+                const date = new Date(entry.date);
+                return date.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
+            });
+            const weights = recentHistory.map(entry => entry.weight);
+
+            // Calcular colores basados en tendencia
+            const colors = weights.map((weight, index) => {
+                if (index === 0) return '#3b82f6'; // Azul para el primer punto
+                const previousWeight = weights[index - 1];
+                if (weight > previousWeight) return '#ef4444'; // Rojo para aumento
+                if (weight < previousWeight) return '#22c55e'; // Verde para disminución
+                return '#6b7280'; // Gris para sin cambio
+            });
+
+            // Destruir gráfico anterior si existe
+            if (weightChart) {
+                weightChart.destroy();
+            }
+
+            // Crear nuevo gráfico
+            const ctx = canvas.getContext('2d');
+            weightChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Peso (kg)',
+                        data: weights,
+                        backgroundColor: colors,
+                        borderColor: colors.map(color => color),
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        borderSkipped: false,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            titleColor: '#ffffff',
+                            bodyColor: '#ffffff',
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.parsed.y} kg`;
+                                },
+                                afterLabel: function(context) {
+                                    if (context.dataIndex > 0) {
+                                        const currentWeight = context.parsed.y;
+                                        const previousWeight = weights[context.dataIndex - 1];
+                                        const change = currentWeight - previousWeight;
+                                        const changeText = change > 0 ? `+${change.toFixed(1)}` : change.toFixed(1);
+                                        return `Cambio: ${changeText} kg`;
+                                    }
+                                    return null;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: Math.min(...weights) - 2,
+                            max: Math.max(...weights) + 2,
+                            ticks: {
+                                color: '#9ca3af',
+                                callback: function(value) {
+                                    return value + ' kg';
+                                }
+                            },
+                            grid: {
+                                color: 'rgba(156, 163, 175, 0.1)'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#9ca3af'
+                            },
+                            grid: {
+                                color: 'rgba(156, 163, 175, 0.1)'
+                            }
+                        }
+                    }
+                }
+            });
         }
 
         // Hacer funciones disponibles globalmente

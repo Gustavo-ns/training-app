@@ -48,6 +48,28 @@
             max-width: 90%;
             width: 400px;
         }
+        
+        /* Estilos para navegación de secciones */
+        .section-content {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .nav-tab {
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .nav-tab:hover {
+            transform: translateY(-1px);
+        }
+        
+        .hidden {
+            display: none !important;
+        }
     </style>
     <script>
         tailwind.config = {
@@ -64,15 +86,43 @@
 </head>
 <body class="text-white min-h-screen p-4 flex flex-col items-center">
 
-    <!-- Encabezado y Título -->
-    <header class="text-center mb-8 w-full max-w-lg">
-        <h1 class="text-3xl font-bold text-gray-100">Plan de Entrenamiento (30 min)</h1>
-        <p id="progress-info" class="text-sm text-gray-400 mt-2">Selecciona una rutina para empezar.</p>
+    <!-- Encabezado Principal -->
+    <header class="text-center mb-6 w-full max-w-lg">
+        <h1 class="text-4xl font-extrabold mb-2 bg-gradient-to-r from-orange-500 to-orange-300 bg-clip-text text-transparent">
+            Entrenamiento HIIT
+        </h1>
+        <p id="progress-info" class="text-sm text-gray-400 mt-2">Tu centro de entrenamiento completo</p>
     </header>
 
-    <!-- Botones de Selección de Rutina -->
-    <section id="selection-screen" class="space-y-4 w-full max-w-sm mb-8">
-        <p class="text-lg font-semibold text-center text-gray-300">Días de la semana:</p>
+    <!-- Navegación por Pestañas -->
+    <nav class="w-full max-w-lg mb-6">
+        <div class="flex bg-gray-800 rounded-xl p-1 gap-1">
+            <button onclick="showSection('training')" class="nav-tab flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-orange-500 text-white">
+                💪 Entrenar
+            </button>
+            <button onclick="showSection('calendar')" class="nav-tab flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-gray-700 text-gray-300">
+                📅 Calendario
+            </button>
+            <button onclick="showSection('profile')" class="nav-tab flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-gray-700 text-gray-300">
+                👤 Perfil
+            </button>
+            <button onclick="showSection('data')" class="nav-tab flex-1 px-3 py-2 rounded-lg text-sm font-medium bg-gray-700 text-gray-300">
+                📊 Datos
+            </button>
+        </div>
+    </nav>
+
+    <!-- Sección: ENTRENAR (Activa por defecto) -->
+    <section id="section-training" class="section-content w-full max-w-lg">
+        <div id="selection-screen" class="space-y-4 w-full mb-8">
+            <!-- Información del día actual -->
+            <div class="text-center p-6 bg-gray-800 rounded-xl shadow-lg">
+                <div class="mb-4">
+                    <h2 class="text-2xl font-bold text-white mb-2" id="today-info">📅 Miércoles</h2>
+                    <p class="text-lg text-orange-400 font-semibold" id="todays-routine">Rutina C - Full Body</p>
+                    <p class="text-sm text-gray-400 mt-2">Tu entrenamiento de hoy está listo</p>
+                </div>
+            </div>
         
         <!-- Indicador de Carga (Spinner) -->
         <div id="loading-spinner" class="text-center p-4">
@@ -80,16 +130,15 @@
             <p class="mt-2 text-sm text-gray-400">Conectando con la base de datos...</p>
         </div>
 
-        <!-- Botones de Rutina (Ocultos inicialmente) -->
+        <!-- Botón de Inicio del Día -->
         <div id="workout-buttons" class="hidden space-y-4">
-            <button onclick="startWorkout('A')" class="w-full py-3 rounded-xl bg-primary hover:bg-orange-600 transition-colors shadow-lg font-semibold">
-                Circuito A (Lunes/Jueves)
+            <button onclick="startTodaysWorkout()" class="w-full py-4 rounded-xl bg-primary hover:bg-orange-600 transition-colors shadow-lg font-bold text-lg">
+                🚀 Iniciar Entrenamiento
             </button>
-            <button onclick="startWorkout('B')" class="w-full py-3 rounded-xl bg-primary hover:bg-orange-600 transition-colors shadow-lg font-semibold">
-                Circuito B (Martes/Viernes)
-            </button>
-            <button onclick="startWorkout('CORE')" class="w-full py-3 rounded-xl bg-blue-500 hover:bg-blue-600 transition-colors shadow-lg font-semibold">
-                Descanso Activo/Core (Miércoles)
+            
+            <!-- Botón secundario para cambiar rutina (opcional) -->
+            <button onclick="showRoutineSelector()" class="w-full py-2 text-sm rounded-lg bg-gray-600 hover:bg-gray-500 transition-colors text-gray-300">
+                📋 Elegir otra rutina
             </button>
         </div>
     </section>
@@ -106,59 +155,305 @@
         <!-- Nombre del Ejercicio -->
         <h2 id="exercise-name" class="text-3xl sm:text-4xl text-center font-extrabold text-gray-50 mb-3 min-h-[3rem]">¡LISTO!</h2>
         
-        <!-- Botón de Búsqueda de Detalles (NUEVO) -->
+        <!-- Indicador de progreso en la fase (NUEVO) -->
+        <div id="phase-progress" class="mb-4 text-center">
+            <span id="progress-text" class="text-sm text-gray-500">Preparándose...</span>
+        </div>
+        
+        <!-- Detalles del Ejercicio (NUEVO) -->
+        <div id="exercise-details" class="hidden w-full max-w-lg mx-auto mb-6 p-4 bg-gray-700 rounded-xl shadow-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h4 class="text-lg font-semibold text-white">Detalles del Ejercicio</h4>
+                <button onclick="hideExerciseDetails()" class="text-gray-400 hover:text-white transition-colors text-xl font-bold" title="Cerrar detalles">×</button>
+            </div>
+            <div class="mb-4">
+                <div class="flex flex-wrap gap-2 mb-3">
+                    <span id="exercise-category" class="px-2 py-1 text-xs rounded-full bg-blue-500 text-white"></span>
+                    <span id="exercise-equipment" class="px-2 py-1 text-xs rounded-full bg-green-500 text-white"></span>
+                    <span id="exercise-muscles" class="px-2 py-1 text-xs rounded-full bg-purple-500 text-white"></span>
+                </div>
+                <p id="exercise-description" class="text-sm text-gray-300 italic mb-3"></p>
+            </div>
+            
+            <div class="space-y-3">
+                <div id="exercise-instructions" class="text-sm text-gray-200">
+                    <h4 class="font-semibold text-white mb-2">🎯 Técnica:</h4>
+                    <ol id="instructions-list" class="space-y-1 pl-4"></ol>
+                </div>
+                
+                <div id="exercise-tips" class="text-sm text-gray-200">
+                    <h4 class="font-semibold text-white mb-2">💡 Consejos:</h4>
+                    <ul id="tips-list" class="space-y-1 pl-4"></ul>
+                </div>
+            </div>
+            
+            <button id="toggle-details" onclick="toggleExerciseDetails()" class="mt-3 w-full px-3 py-2 bg-gray-600 text-white text-sm rounded hover:bg-gray-500 transition-colors">
+                ▲ Ocultar Detalles
+            </button>
+        </div>
+
+        <!-- Botón para Mostrar/Ocultar Detalles -->
+        <button id="show-details-button" onclick="toggleExerciseDetails()" class="hidden mb-4 px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
+            📋 Ver Técnica Detallada
+        </button>
+        
+        <!-- Botón de Búsqueda de Video -->
         <a id="details-link" target="_blank" class="px-4 py-2 mb-6 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-md font-medium text-sm hidden">
-            Ver Video / Técnica
+            🎥 Ver Video / Técnica
         </a>
 
         <!-- Temporizador -->
-        <div id="timer-box" class="timer-display work-color mb-8">
+        <div id="timer-box" class="timer-display work-color mb-8 text-gray-500">
             00:00
+        </div>
+        
+        <!-- Mensaje de inicio (NUEVO) -->
+        <div id="start-message" class="mb-4 px-4 py-2 bg-green-600 text-white text-sm rounded-lg text-center">
+            🚀 Presiona INICIAR cuando estés listo
+        </div>
+        
+        <!-- Indicador de preparación (NUEVO) -->
+        <div id="preparation-indicator" class="hidden mb-4 px-4 py-2 bg-yellow-600 text-white text-sm rounded-lg">
+            🎯 ¡Prepárate! Lee la técnica mientras esperas...
         </div>
 
         <!-- Botones de Control -->
-        <div class="flex flex-wrap justify-center gap-4">
-            <button onclick="togglePause()" id="pause-button" class="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors font-semibold flex-grow sm:flex-grow-0">
-                PAUSAR
+        <div id="control-buttons" class="flex flex-wrap justify-center gap-4">
+            <!-- Botón de PLAY inicial (solo al comenzar) -->
+            <button onclick="startTimer()" id="play-button" class="px-8 py-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-bold text-lg shadow-lg">
+                ▶️ INICIAR
             </button>
-            <button onclick="nextStep()" class="px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors shadow-lg font-semibold flex-grow sm:flex-grow-0">
-                ADELANTAR
+            
+            <!-- Controles completos (ocultos al inicio) -->
+            <div id="full-controls" class="hidden flex flex-wrap justify-center gap-4 w-full">
+                <button onclick="togglePause()" id="pause-button" class="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors font-semibold flex-grow sm:flex-grow-0">
+                    PAUSAR
+                </button>
+                <button onclick="nextStep()" class="px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors shadow-lg font-semibold flex-grow sm:flex-grow-0">
+                    ADELANTAR
+                </button>
+                <button onclick="goBack()" class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold flex-grow sm:flex-grow-0">
+                    ATRAS
+                </button>
+                <!-- Botón para guardado manual -->
+                <button onclick="saveProgress('manual')" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex-grow sm:flex-grow-0">
+                    GUARDAR
+                </button>
+                <!-- Botón de Reinicio (oculto, solo para desarrollador/debugging) -->
+                <button onclick="resetWorkout()" id="reset-button" class="hidden">REINICIAR</button>
+            </div>
+            
+            <!-- Botón para volver al inicio (solo cuando termina el entrenamiento) -->
+            <button onclick="backToStart()" id="back-to-start-button" class="hidden w-full px-8 py-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-bold text-lg shadow-lg">
+                🏠 Volver al Inicio
             </button>
-            <button onclick="goBack()" class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold flex-grow sm:flex-grow-0">
-                ATRAS
-            </button>
-            <!-- Botón para guardado manual -->
-            <button onclick="saveProgress('manual')" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex-grow sm:flex-grow-0">
-                GUARDAR
-            </button>
-            <!-- Botón de Reinicio (oculto, solo para desarrollador/debugging) -->
-            <button onclick="resetWorkout()" id="reset-button" class="hidden">REINICIAR</button>
         </div>
 
     </main>
 
-    <!-- Historial de Rutinas Completadas -->
-    <section class="mt-10 w-full max-w-lg p-4 bg-gray-800 rounded-xl shadow-lg">
-        <h2 class="text-2xl font-bold mb-4 text-gray-100">Historial de Completados</h2>
+    <!-- Sección: CALENDARIO -->
+    <section id="section-calendar" class="section-content w-full max-w-lg hidden">
+        <h2 class="text-2xl font-bold mb-4 text-gray-100">📅 Calendario de Entrenamientos</h2>
+        
+        <!-- Controles del calendario -->
+        <div class="flex justify-between items-center mb-4">
+            <button onclick="changeCalendarMonth(-1)" class="px-3 py-2 bg-gray-600 hover:bg-gray-500 rounded text-white">◀ Anterior</button>
+            <h3 id="calendar-month-year" class="text-lg font-semibold text-white">Octubre 2025</h3>
+            <button onclick="changeCalendarMonth(1)" class="px-3 py-2 bg-gray-600 hover:bg-gray-500 rounded text-white">Siguiente ▶</button>
+        </div>
+        
+        <!-- Días de la semana -->
+        <div class="grid grid-cols-7 gap-1 mb-2">
+            <div class="text-center text-xs font-semibold text-gray-400 py-2">Dom</div>
+            <div class="text-center text-xs font-semibold text-gray-400 py-2">Lun</div>
+            <div class="text-center text-xs font-semibold text-gray-400 py-2">Mar</div>
+            <div class="text-center text-xs font-semibold text-gray-400 py-2">Mié</div>
+            <div class="text-center text-xs font-semibold text-gray-400 py-2">Jue</div>
+            <div class="text-center text-xs font-semibold text-gray-400 py-2">Vie</div>
+            <div class="text-center text-xs font-semibold text-gray-400 py-2">Sáb</div>
+        </div>
+        
+        <!-- Días del mes -->
+        <div id="calendar-days" class="grid grid-cols-7 gap-1">
+            <!-- Los días se generan dinámicamente -->
+        </div>
+        
+        <!-- Estadísticas del mes -->
+        <div id="calendar-stats" class="mt-4 p-3 bg-gray-700 rounded-lg">
+            <div class="text-sm font-semibold text-white mb-2">📊 Estadísticas del mes</div>
+            <div class="grid grid-cols-2 gap-2 text-xs">
+                <div>✅ Completados: <span id="completed-count" class="font-semibold text-green-400">0</span></div>
+                <div>❌ Perdidos: <span id="missed-count" class="font-semibold text-red-400">0</span></div>
+                <div>📈 Racha: <span id="streak-count" class="font-semibold text-yellow-400">0 días</span></div>
+                <div>🎯 Porcentaje: <span id="completion-percentage" class="font-semibold text-blue-400">0%</span></div>
+            </div>
+        </div>
+        
+        <!-- Leyenda -->
+        <div class="mt-4 flex flex-wrap justify-center gap-4 text-xs">
+            <div class="flex items-center gap-1">
+                <div class="w-4 h-4 bg-green-500 rounded"></div>
+                <span class="text-gray-300">Completado</span>
+            </div>
+            <div class="flex items-center gap-1">
+                <div class="w-4 h-4 bg-blue-500 rounded"></div>
+                <span class="text-gray-300">Hoy</span>
+            </div>
+            <div class="flex items-center gap-1">
+                <div class="w-4 h-4 bg-red-500 rounded"></div>
+                <span class="text-gray-300">Perdido</span>
+            </div>
+            <div class="flex items-center gap-1">
+                <div class="w-4 h-4 bg-gray-600 rounded"></div>
+                <span class="text-gray-300">Futuro</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección: PERFIL -->
+    <section id="section-profile" class="section-content w-full max-w-lg hidden">
+        <h2 class="text-2xl font-bold mb-4 text-gray-100">👤 Perfil de Usuario</h2>
+        
+        <!-- Datos básicos del usuario -->
+        <div id="user-profile-display" class="mb-4 p-3 bg-gray-700 rounded-lg">
+            <div class="grid grid-cols-2 gap-3 text-sm">
+                <div>📏 Altura: <span id="display-height" class="font-semibold text-blue-400">- cm</span></div>
+                <div>⚖️ Peso: <span id="display-weight" class="font-semibold text-green-400">- kg</span></div>
+                <div>🎂 Edad: <span id="display-age" class="font-semibold text-yellow-400">- años</span></div>
+                <div>⚡ Actividad: <span id="display-activity" class="font-semibold text-purple-400">-</span></div>
+            </div>
+            <div class="mt-2 text-center">
+                <div class="text-lg font-bold">
+                    📊 IMC: <span id="display-bmi" class="text-orange-400">-</span>
+                    <span id="display-bmi-category" class="text-xs text-gray-400 ml-2">(-)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botón para editar perfil -->
+        <button onclick="toggleProfileEditor()" id="edit-profile-btn" class="w-full mb-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+            ✏️ Editar Perfil
+        </button>
+
+        <!-- Formulario de edición (oculto por defecto) -->
+        <div id="profile-editor" class="hidden mb-4 p-4 bg-gray-700 rounded-lg">
+            <h3 class="font-semibold mb-3 text-white">Información Personal</h3>
+            
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Altura (cm)</label>
+                    <input type="number" id="input-height" placeholder="170" min="100" max="250"
+                           class="w-full px-2 py-1 text-sm bg-gray-600 text-white rounded border border-gray-500 focus:border-blue-400 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Peso actual (kg)</label>
+                    <input type="number" id="input-weight" placeholder="70" min="30" max="300" step="0.1"
+                           class="w-full px-2 py-1 text-sm bg-gray-600 text-white rounded border border-gray-500 focus:border-blue-400 focus:outline-none">
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3 mb-3">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Edad (años)</label>
+                    <input type="number" id="input-age" placeholder="25" min="13" max="100"
+                           class="w-full px-2 py-1 text-sm bg-gray-600 text-white rounded border border-gray-500 focus:border-blue-400 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Sexo</label>
+                    <select id="input-gender" class="w-full px-2 py-1 text-sm bg-gray-600 text-white rounded border border-gray-500 focus:border-blue-400 focus:outline-none">
+                        <option value="">Seleccionar</option>
+                        <option value="male">Masculino</option>
+                        <option value="female">Femenino</option>
+                        <option value="other">Otro</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="block text-xs text-gray-400 mb-1">Nivel de Actividad Física</label>
+                <select id="input-activity" class="w-full px-2 py-1 text-sm bg-gray-600 text-white rounded border border-gray-500 focus:border-blue-400 focus:outline-none">
+                    <option value="">Seleccionar nivel</option>
+                    <option value="sedentary">Sedentario (poco o ningún ejercicio)</option>
+                    <option value="light">Ligero (ejercicio ligero 1-3 días/semana)</option>
+                    <option value="moderate">Moderado (ejercicio moderado 3-5 días/semana)</option>
+                    <option value="active">Activo (ejercicio intenso 6-7 días/semana)</option>
+                    <option value="very-active">Muy activo (ejercicio muy intenso, trabajo físico)</option>
+                </select>
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="saveUserProfile()" class="flex-1 px-3 py-2 bg-green-600 hover:bg-green-700 text-white text-sm rounded transition-colors">
+                    💾 Guardar
+                </button>
+                <button onclick="toggleProfileEditor()" class="flex-1 px-3 py-2 bg-gray-600 hover:bg-gray-500 text-white text-sm rounded transition-colors">
+                    ❌ Cancelar
+                </button>
+            </div>
+        </div>
+
+        <!-- Historial de Peso -->
+        <div class="mb-4">
+            <h3 class="font-semibold mb-2 text-white">📈 Historial de Peso</h3>
+            
+            <!-- Añadir nueva medición -->
+            <div class="flex gap-2 mb-3">
+                <input type="number" id="new-weight" placeholder="Peso (kg)" step="0.1" min="30" max="300"
+                       class="flex-1 px-2 py-1 text-sm bg-gray-600 text-white rounded border border-gray-500 focus:border-blue-400 focus:outline-none">
+                <button onclick="addWeightEntry()" class="px-3 py-1 bg-orange-600 hover:bg-orange-700 text-white text-sm rounded transition-colors">
+                    ➕ Agregar
+                </button>
+            </div>
+
+            <!-- Lista del historial de peso -->
+            <div id="weight-history" class="max-h-40 overflow-y-auto bg-gray-700 rounded p-2">
+                <p class="text-gray-400 text-xs">No hay registros de peso aún</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección: DATOS -->
+    <section id="section-data" class="section-content w-full max-w-lg hidden">
+        <h2 class="text-2xl font-bold mb-4 text-gray-100">📊 Gestión de Datos</h2>
+        
+        <!-- Historial de Entrenamientos -->
+        <div class="mb-6 p-4 bg-gray-700 rounded-lg">
+            <h3 class="text-lg font-bold mb-3 text-gray-100">� Historial de Entrenamientos</h3>
         <div id="history-list" class="space-y-2 max-h-60 overflow-y-auto">
             <p class="text-gray-400" id="loading-history">Cargando historial...</p>
         </div>
-        <p class="text-sm text-gray-500 mt-4">ID de Usuario: <span id="user-id">Cargando...</span></p>
-        <div class="mt-4 text-center space-y-2">
-            <button onclick="testFirebaseConnection()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
-                🔧 Probar Conexión Firebase
-            </button>
-            <div class="flex flex-wrap gap-2 justify-center">
-                <button onclick="downloadDataAsJSON()" class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors">
-                    📥 Descargar JSON
+        
+        <!-- Gestión de Usuario -->
+        <div class="mb-6 p-4 bg-gray-700 rounded-lg">
+            <h3 class="text-lg font-bold mb-3 text-gray-100">👤 Gestión de Usuario</h3>
+            <p class="text-sm text-gray-400 mb-2">ID de Usuario: <span id="user-id" class="text-white font-semibold">Cargando...</span></p>
+            <div class="flex gap-2 mb-2">
+                <input type="text" id="custom-user-id" placeholder="Personalizar ID (ej: juan-2025)" 
+                       class="flex-1 px-3 py-2 text-sm bg-gray-600 text-white rounded border border-gray-500 focus:border-blue-400 focus:outline-none">
+                <button onclick="changeUserId()" class="px-3 py-2 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors">
+                    💾 Cambiar ID
                 </button>
-                <label for="json-file-import" class="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors cursor-pointer">
-                    📤 Importar JSON
-                </label>
+            </div>
+        </div>
+        
+        <!-- Herramientas de Datos -->
+        <div class="p-4 bg-gray-700 rounded-lg">
+            <h3 class="text-lg font-bold mb-3 text-gray-100">🔧 Herramientas</h3>
+            <div class="text-center space-y-2">
+                <button onclick="testFirebaseConnection()" class="w-full px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
+                    🔧 Probar Conexión Firebase
+                </button>
+                <div class="grid grid-cols-3 gap-2">
+                    <button onclick="downloadDataAsJSON()" class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors">
+                        📥 Descargar
+                    </button>
+                    <label for="json-file-import" class="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors cursor-pointer text-center">
+                        📤 Importar
+                    </label>
+                    <button onclick="clearAllData()" class="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors">
+                        🗑️ Limpiar
+                    </button>
+                </div>
                 <input type="file" id="json-file-import" accept=".json" style="display: none;" onchange="handleJSONImport(event)">
-                <button onclick="clearAllData()" class="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors">
-                    🗑️ Limpiar Datos
-                </button>
             </div>
         </div>
     </section>
@@ -179,6 +474,43 @@
         </div>
     </div>
 
+
+    <script>
+        // --- NAVEGACIÓN ENTRE SECCIONES (GLOBAL) ---
+        function showSection(sectionName) {
+            // Ocultar todas las secciones
+            const sections = document.querySelectorAll('.section-content');
+            sections.forEach(section => section.classList.add('hidden'));
+            
+            // Remover clase activa de todos los botones de navegación
+            const navButtons = document.querySelectorAll('.nav-tab');
+            navButtons.forEach(btn => {
+                btn.classList.remove('bg-orange-500', 'text-white');
+                btn.classList.add('bg-gray-700', 'text-gray-300');
+            });
+            
+            // Mostrar la sección seleccionada
+            const targetSection = document.getElementById(`section-${sectionName}`);
+            if (targetSection) {
+                targetSection.classList.remove('hidden');
+            }
+            
+            // Activar el botón de navegación correspondiente
+            const activeButton = document.querySelector(`[onclick="showSection('${sectionName}')"]`);
+            if (activeButton) {
+                activeButton.classList.remove('bg-gray-700', 'text-gray-300');
+                activeButton.classList.add('bg-orange-500', 'text-white');
+            }
+        }
+        
+        // Mostrar sección de entrenamiento por defecto al cargar
+        document.addEventListener('DOMContentLoaded', function() {
+            showSection('training');
+        });
+        
+        // Hacer la función global para que esté disponible desde el módulo
+        window.showSection = showSection;
+    </script>
 
     <script type="module">
         // Importaciones de Firebase
@@ -236,6 +568,463 @@
         const CORE_REST_TIME = 15;
         const ROUNDS = 4; // 4 rondas para todos los circuitos
 
+        // --- BASE DE DATOS DE EJERCICIOS CON DESCRIPCIONES DETALLADAS ---
+        const EXERCISE_DATABASE = {
+            // CALENTAMIENTO
+            "Marcha en el sitio / Trote Suave": {
+                category: "calentamiento",
+                equipment: "ninguno",
+                muscles: ["piernas", "cardiovascular"],
+                description: "Movimiento suave para activar la circulación y preparar el cuerpo",
+                instructions: [
+                    "1. Párate derecho con los pies separados al ancho de las caderas",
+                    "2. Eleva alternadamente las rodillas hasta la altura de la cadera",
+                    "3. Balancea los brazos naturalmente",
+                    "4. Mantén el torso erguido y respira profundamente",
+                    "5. Aumenta gradualmente la intensidad"
+                ],
+                tips: [
+                    "✅ Aterriza suavemente en la parte media del pie",
+                    "✅ Mantén los hombros relajados",
+                    "⚠️ No saltes demasiado alto al principio"
+                ]
+            },
+            "Círculos de brazos (adelante y atrás)": {
+                category: "calentamiento",
+                equipment: "ninguno",
+                muscles: ["hombros", "brazos"],
+                description: "Movilización articular para preparar hombros y brazos",
+                instructions: [
+                    "1. Párate con los pies separados al ancho de hombros",
+                    "2. Extiende los brazos a los lados, paralelos al suelo",
+                    "3. Realiza círculos pequeños hacia adelante 15 segundos",
+                    "4. Cambia dirección hacia atrás otros 15 segundos",
+                    "5. Aumenta gradualmente el tamaño de los círculos"
+                ],
+                tips: [
+                    "✅ Mantén los brazos extendidos pero no rígidos",
+                    "✅ Control el movimiento, no uses impulso",
+                    "⚠️ Si sientes dolor, reduce el rango de movimiento"
+                ]
+            },
+            "Oscilación de piernas (adelante y lados)": {
+                category: "calentamiento",
+                equipment: "ninguno",
+                muscles: ["cadera", "piernas"],
+                description: "Movilización de cadera y piernas para mejorar flexibilidad",
+                instructions: [
+                    "1. Apóyate en una pared o superficie para mantener equilibrio",
+                    "2. Balancea una pierna hacia adelante y atrás 10 veces",
+                    "3. Luego balancea la misma pierna hacia los lados 10 veces",
+                    "4. Cambia de pierna y repite",
+                    "5. Mantén el torso erguido durante todo el movimiento"
+                ],
+                tips: [
+                    "✅ Movimiento controlado, no uses impulso",
+                    "✅ Aumenta gradualmente el rango de movimiento",
+                    "⚠️ No fuerces el estiramiento"
+                ]
+            },
+            "Sentadillas corporales (lentas)": {
+                category: "calentamiento",
+                equipment: "ninguno",
+                muscles: ["piernas", "glúteos"],
+                description: "Preparación suave para ejercicios de piernas más intensos",
+                instructions: [
+                    "1. Párate con pies al ancho de hombros",
+                    "2. Baja lentamente a posición de sentadilla",
+                    "3. Mantén el pecho erguido y peso en los talones",
+                    "4. Sube lentamente a la posición inicial",
+                    "5. Enfócate en la técnica, no en la velocidad"
+                ],
+                tips: [
+                    "✅ Movimiento lento y controlado",
+                    "✅ Respira profundamente durante el movimiento",
+                    "⚠️ No bajes más de lo que te sea cómodo"
+                ]
+            },
+            "Rotación de torso suave": {
+                category: "calentamiento",
+                equipment: "ninguno",
+                muscles: ["core", "espalda"],
+                description: "Moviliza la columna y prepara el core",
+                instructions: [
+                    "1. Párate con pies al ancho de hombros",
+                    "2. Coloca las manos en las caderas o cruza sobre el pecho",
+                    "3. Gira suavemente el torso hacia la derecha",
+                    "4. Regresa al centro y gira hacia la izquierda",
+                    "5. Mantén las caderas mirando hacia adelante"
+                ],
+                tips: [
+                    "✅ Movimiento suave y controlado",
+                    "✅ Mantén las caderas estables",
+                    "⚠️ No fuerces la rotación"
+                ]
+            },
+            // ESTIRAMIENTOS (COOLDOWN)
+            "Estiramiento de Cuádriceps (30s c/lado)": {
+                category: "estiramiento",
+                equipment: "ninguno",
+                muscles: ["cuádriceps"],
+                description: "Estira los músculos frontales del muslo",
+                instructions: [
+                    "1. Párate derecho, usa pared para apoyo si necesario",
+                    "2. Flexiona la rodilla llevando el talón hacia el glúteo",
+                    "3. Sostén el pie con la mano del mismo lado",
+                    "4. Mantén las rodillas juntas y caderas hacia adelante",
+                    "5. Mantén 30 segundos, cambia de lado"
+                ],
+                tips: [
+                    "✅ Mantén las rodillas juntas",
+                    "✅ No tires fuerte del pie",
+                    "⚠️ Si no puedes alcanzar el pie, usa una toalla"
+                ]
+            },
+            "Estiramiento de Isquiotibiales (toca pies)": {
+                category: "estiramiento",
+                equipment: "ninguno",
+                muscles: ["isquiotibiales", "espalda baja"],
+                description: "Estira la parte posterior de las piernas",
+                instructions: [
+                    "1. Párate con pies juntos o ligeramente separados",
+                    "2. Baja lentamente llevando las manos hacia los pies",
+                    "3. Mantén las piernas rectas o ligeramente flexionadas",
+                    "4. Respira profundamente y relájate en la posición",
+                    "5. Sube lentamente enrollando la columna"
+                ],
+                tips: [
+                    "✅ No rebotes, mantén el estiramiento estático",
+                    "✅ Flexiona ligeramente las rodillas si es necesario",
+                    "⚠️ No fuerces si tienes problemas de espalda"
+                ]
+            },
+            "Estiramiento de Pecho (manos atrás)": {
+                category: "estiramiento",
+                equipment: "ninguno",
+                muscles: ["pecho", "hombros"],
+                description: "Estira los músculos del pecho y mejora la postura",
+                instructions: [
+                    "1. Párate derecho con pies al ancho de hombros",
+                    "2. Entrelaza los dedos detrás de la espalda",
+                    "3. Endereza los brazos y levántalos ligeramente",
+                    "4. Saca el pecho y aprieta los omóplatos",
+                    "5. Mantén la posición respirando profundamente"
+                ],
+                tips: [
+                    "✅ Mantén los hombros relajados",
+                    "✅ Respira profundamente",
+                    "⚠️ No fuerces si tienes problemas de hombro"
+                ]
+            },
+            "Estiramiento de Hombro (brazo cruzado)": {
+                category: "estiramiento",
+                equipment: "ninguno",
+                muscles: ["hombros", "brazos"],
+                description: "Estira los músculos del hombro y la parte posterior del brazo",
+                instructions: [
+                    "1. Extiende el brazo derecho cruzándolo sobre el pecho",
+                    "2. Con el brazo izquierdo, tira suavemente del codo derecho",
+                    "3. Mantén el hombro relajado y hacia abajo",
+                    "4. Mantén 30 segundos, cambia de brazo",
+                    "5. Respira normalmente durante el estiramiento"
+                ],
+                tips: [
+                    "✅ Tira suavemente, no uses fuerza",
+                    "✅ Mantén los hombros relajados",
+                    "⚠️ No tires del hombro hacia arriba"
+                ]
+            },
+            "Descanso de Recuperación": {
+                category: "descanso",
+                equipment: "ninguno",
+                muscles: ["recuperación"],
+                description: "Tiempo para recuperarse entre ejercicios intensos",
+                instructions: [
+                    "1. Respira profundamente y de manera controlada",
+                    "2. Camina suavemente en el sitio si lo necesitas",
+                    "3. Mantente hidratado con pequeños sorbos de agua",
+                    "4. Relaja los músculos que han estado trabajando",
+                    "5. Prepárate mentalmente para el siguiente ejercicio"
+                ],
+                tips: [
+                    "✅ No te sientes completamente, mantente activo",
+                    "✅ Respira profundamente para reducir la frecuencia cardíaca",
+                    "⚠️ Si sientes mareo, siéntate y descansa más tiempo"
+                ]
+            },
+            
+            // CIRCUITO A
+            "Sentadilla Goblet (12kg)": {
+                category: "fuerza",
+                equipment: "mancuerna 12kg",
+                muscles: ["cuádriceps", "glúteos", "core"],
+                description: "Ejercicio fundamental para fortalecer piernas y glúteos",
+                instructions: [
+                    "1. Sostén la mancuerna con ambas manos contra el pecho",
+                    "2. Pies separados al ancho de hombros, dedos ligeramente hacia afuera",
+                    "3. Baja manteniendo el pecho erguido hasta que los muslos estén paralelos",
+                    "4. Empuja desde los talones para volver a la posición inicial",
+                    "5. Mantén las rodillas alineadas con los dedos de los pies"
+                ],
+                tips: [
+                    "✅ El peso está en los talones, no en las puntas",
+                    "✅ Mantén el core contraído durante todo el movimiento",
+                    "⚠️ No dejes que las rodillas se vayan hacia adentro",
+                    "⚠️ No bajes más de lo que tu flexibilidad permita"
+                ]
+            },
+            "Remo a una mano (12kg)": {
+                category: "fuerza",
+                equipment: "mancuerna 12kg",
+                muscles: ["espalda", "bíceps", "core"],
+                description: "Fortalece la espalda y mejora la postura",
+                instructions: [
+                    "1. Apoya rodilla y mano izquierda en un banco o superficie",
+                    "2. Pie derecho firme en el suelo, torso paralelo al suelo",
+                    "3. Sostén la mancuerna con el brazo derecho extendido",
+                    "4. Tira del codo hacia atrás, llevando la mancuerna hacia las costillas",
+                    "5. Baja controladamente y repite. Cambia de lado."
+                ],
+                tips: [
+                    "✅ Aprieta el omóplato hacia la columna al subir",
+                    "✅ Mantén la espalda recta durante todo el movimiento",
+                    "⚠️ No uses impulso ni balancees el torso",
+                    "⚠️ No dejes caer el hombro del brazo que trabaja"
+                ]
+            },
+            "Zancada Inversa (12kg)": {
+                category: "fuerza",
+                equipment: "mancuerna 12kg",
+                muscles: ["cuádriceps", "glúteos", "isquiotibiales"],
+                description: "Ejercicio unilateral que mejora fuerza y equilibrio",
+                instructions: [
+                    "1. Párate derecho sosteniendo mancuernas a los lados",
+                    "2. Da un paso largo hacia atrás con el pie derecho",
+                    "3. Baja hasta que la rodilla trasera casi toque el suelo",
+                    "4. Empuja desde el talón delantero para volver al inicio",
+                    "5. Alterna las piernas o completa todas las repeticiones de un lado"
+                ],
+                tips: [
+                    "✅ Mantén el torso erguido durante todo el movimiento",
+                    "✅ El 70% del peso debe estar en la pierna delantera",
+                    "⚠️ No dejes que la rodilla delantera pase la punta del pie",
+                    "⚠️ No apoyes el peso en la pierna trasera"
+                ]
+            },
+            
+            // CIRCUITO B
+            "Peso Muerto Rumano (12kg)": {
+                category: "fuerza",
+                equipment: "mancuerna 12kg",
+                muscles: ["isquiotibiales", "glúteos", "espalda baja"],
+                description: "Fortalece la cadena posterior y mejora la flexibilidad",
+                instructions: [
+                    "1. Sostén mancuernas frente a los muslos, pies al ancho de caderas",
+                    "2. Mantén las rodillas ligeramente flexionadas",
+                    "3. Empuja las caderas hacia atrás y baja las mancuernas",
+                    "4. Baja hasta sentir estiramiento en isquiotibiales",
+                    "5. Empuja las caderas hacia adelante para volver al inicio"
+                ],
+                tips: [
+                    "✅ Mantén la espalda recta, pecho hacia afuera",
+                    "✅ Las mancuernas deben mantenerse cerca del cuerpo",
+                    "⚠️ No redondees la espalda",
+                    "⚠️ El movimiento viene de las caderas, no de las rodillas"
+                ]
+            },
+            "Plancha (Plank)": {
+                category: "core",
+                equipment: "ninguno",
+                muscles: ["core", "hombros", "glúteos"],
+                description: "Ejercicio isométrico que fortalece todo el core",
+                instructions: [
+                    "1. Colócate en posición de flexión de brazos",
+                    "2. Apoya los antebrazos en el suelo, codos bajo los hombros",
+                    "3. Mantén el cuerpo en línea recta desde cabeza hasta talones",
+                    "4. Contrae el abdomen y los glúteos",
+                    "5. Mantén la posición respirando normalmente"
+                ],
+                tips: [
+                    "✅ Mantén la mirada hacia el suelo para proteger el cuello",
+                    "✅ Respira normalmente, no contengas la respiración",
+                    "⚠️ No levantes las caderas demasiado",
+                    "⚠️ No dejes que las caderas se hundan"
+                ]
+            },
+            "Press de Hombro (12kg)": {
+                category: "fuerza",
+                equipment: "mancuerna 12kg",
+                muscles: ["hombros", "tríceps", "core"],
+                description: "Fortalece los hombros y mejora la estabilidad del core",
+                instructions: [
+                    "1. Párate con los pies al ancho de hombros",
+                    "2. Sostén las mancuernas a la altura de los hombros",
+                    "3. Palmas mirando hacia adelante, codos hacia abajo",
+                    "4. Empuja las mancuernas hacia arriba hasta extender los brazos",
+                    "5. Baja controladamente a la posición inicial"
+                ],
+                tips: [
+                    "✅ Mantén el core contraído para proteger la espalda baja",
+                    "✅ No arqueés excesivamente la espalda",
+                    "⚠️ No choques las mancuernas arriba",
+                    "⚠️ No bajes más allá de la altura de los hombros"
+                ]
+            },
+            "Burpees sin Salto": {
+                category: "cardio",
+                equipment: "ninguno",
+                muscles: ["todo el cuerpo"],
+                description: "Ejercicio cardiovascular de cuerpo completo de bajo impacto",
+                instructions: [
+                    "1. Párate derecho con los pies al ancho de hombros",
+                    "2. Agáchate y coloca las manos en el suelo",
+                    "3. Da un paso hacia atrás con cada pie para quedar en plancha",
+                    "4. Da un paso hacia adelante con cada pie",
+                    "5. Levántate y estira los brazos hacia arriba"
+                ],
+                tips: [
+                    "✅ Mantén el core contraído en la posición de plancha",
+                    "✅ Movimientos controlados, no te apresures",
+                    "⚠️ No dejes que las caderas se hundan en la plancha",
+                    "⚠️ Si tienes problemas de muñeca, usa puños cerrados"
+                ]
+            },
+            "Dumbbell Thrusters (12kg)": {
+                category: "fuerza",
+                equipment: "mancuerna 12kg",
+                muscles: ["piernas", "hombros", "core"],
+                description: "Ejercicio compuesto que combina sentadilla con press de hombro",
+                instructions: [
+                    "1. Sostén las mancuernas a la altura de los hombros",
+                    "2. Realiza una sentadilla completa",
+                    "3. Al subir de la sentadilla, usa el impulso para presionar las mancuernas arriba",
+                    "4. Baja las mancuernas mientras desciendes a la siguiente sentadilla",
+                    "5. Mantén un ritmo fluido y controlado"
+                ],
+                tips: [
+                    "✅ Usa el impulso de las piernas para ayudar al press",
+                    "✅ Mantén el torso erguido durante todo el movimiento",
+                    "⚠️ No pares entre la sentadilla y el press",
+                    "⚠️ No arqueés la espalda al presionar arriba"
+                ]
+            },
+            "Mountain Climbers": {
+                category: "cardio",
+                equipment: "ninguno",
+                muscles: ["core", "hombros", "piernas"],
+                description: "Ejercicio cardiovascular que fortalece el core y mejora la coordinación",
+                instructions: [
+                    "1. Comienza en posición de plancha alta (brazos extendidos)",
+                    "2. Lleva la rodilla derecha hacia el codo derecho",
+                    "3. Regresa la pierna derecha y lleva la rodilla izquierda hacia el codo izquierdo",
+                    "4. Alterna las piernas manteniendo un ritmo constante",
+                    "5. Mantén las caderas estables durante todo el movimiento"
+                ],
+                tips: [
+                    "✅ Mantén las manos firmes y los hombros sobre las muñecas",
+                    "✅ Respira de manera constante y controlada",
+                    "⚠️ No levantes las caderas demasiado",
+                    "⚠️ No hagas el movimiento demasiado rápido si pierdes la forma"
+                ]
+            },
+            "Elevación de Talones (12kg)": {
+                category: "fuerza",
+                equipment: "mancuerna 12kg",
+                muscles: ["pantorrillas"],
+                description: "Fortalece los músculos de las pantorrillas",
+                instructions: [
+                    "1. Párate derecho sosteniendo las mancuernas a los lados",
+                    "2. Pies separados al ancho de caderas, paralelos",
+                    "3. Levántate sobre las puntas de los pies lo más alto posible",
+                    "4. Mantén la posición por un momento",
+                    "5. Baja controladamente hasta apoyar totalmente los pies"
+                ],
+                tips: [
+                    "✅ Mantén el equilibrio, usa una pared si es necesario",
+                    "✅ Haz el movimiento completo, desde abajo hasta arriba",
+                    "⚠️ No rebotes en la parte inferior",
+                    "⚠️ No te inclines hacia adelante o atrás"
+                ]
+            },
+            // EJERCICIOS DE CORE
+            "Crunches (Encogimientos)": {
+                category: "core",
+                equipment: "ninguno",
+                muscles: ["abdomen"],
+                description: "Ejercicio básico para fortalecer los músculos abdominales",
+                instructions: [
+                    "1. Acuéstate boca arriba con las rodillas flexionadas",
+                    "2. Pies apoyados en el suelo, manos detrás de la cabeza",
+                    "3. Contrae el abdomen y levanta los hombros del suelo",
+                    "4. Mantén por un momento y baja controladamente",
+                    "5. No tires del cuello con las manos"
+                ],
+                tips: [
+                    "✅ El movimiento viene del abdomen, no del cuello",
+                    "✅ Exhala al subir, inhala al bajar",
+                    "⚠️ No tires de la cabeza con las manos",
+                    "⚠️ No necesitas levantarte completamente"
+                ]
+            },
+            "Abdominales Bicicleta": {
+                category: "core",
+                equipment: "ninguno",
+                muscles: ["abdomen", "oblicuos"],
+                description: "Ejercicio dinámico que trabaja el abdomen y los oblicuos",
+                instructions: [
+                    "1. Acuéstate boca arriba, manos detrás de la cabeza",
+                    "2. Levanta las piernas con rodillas flexionadas a 90°",
+                    "3. Lleva el codo derecho hacia la rodilla izquierda",
+                    "4. Alterna llevando el codo izquierdo hacia la rodilla derecha",
+                    "5. Mantén un ritmo controlado como si pedaleases"
+                ],
+                tips: [
+                    "✅ Mantén la espalda baja pegada al suelo",
+                    "✅ Controla el movimiento, no uses impulso",
+                    "⚠️ No tires del cuello",
+                    "⚠️ No dejes que los pies toquen el suelo"
+                ]
+            },
+            "Elevación de piernas": {
+                category: "core",
+                equipment: "ninguno",
+                muscles: ["abdomen bajo"],
+                description: "Ejercicio que fortalece especialmente la parte baja del abdomen",
+                instructions: [
+                    "1. Acuéstate boca arriba con las piernas extendidas",
+                    "2. Manos a los lados del cuerpo o bajo la espalda baja",
+                    "3. Levanta las piernas juntas hasta formar 90° con el torso",
+                    "4. Baja las piernas controladamente sin tocar el suelo",
+                    "5. Mantén la espalda baja pegada al suelo"
+                ],
+                tips: [
+                    "✅ Si es muy difícil, flexiona ligeramente las rodillas",
+                    "✅ Baja las piernas solo hasta donde puedas controlar",
+                    "⚠️ No arquees la espalda baja",
+                    "⚠️ No uses impulso para subir las piernas"
+                ]
+            },
+            "Plancha Lateral (Lado 1 y 2 - 22s c/u)": {
+                category: "core",
+                equipment: "ninguno",
+                muscles: ["oblicuos", "core"],
+                description: "Ejercicio isométrico que fortalece los músculos laterales del core",
+                instructions: [
+                    "1. Acuéstate de lado, apóyate en el antebrazo",
+                    "2. Codo directamente bajo el hombro",
+                    "3. Levanta las caderas formando una línea recta",
+                    "4. Mantén 22 segundos, luego cambia de lado",
+                    "5. Mantén la cabeza alineada con la columna"
+                ],
+                tips: [
+                    "✅ Aprieta el abdomen y los glúteos",
+                    "✅ Respira normalmente mientras mantienes la posición",
+                    "⚠️ No dejes que las caderas se hundan",
+                    "⚠️ No ruedes hacia adelante o atrás"
+                ]
+            }
+        };
+
         const WORKOUT_STRUCTURE = {
             WARMUP: [
                 { name: "Marcha en el sitio / Trote Suave", duration: 60, isRest: false, style: 'ready-color' },
@@ -278,6 +1067,44 @@
             ]
         };
 
+        // --- VARIABLES DEL CALENDARIO ---
+        let currentCalendarMonth = new Date().getMonth();
+        let currentCalendarYear = new Date().getFullYear();
+
+        // --- RUTINA DEL DÍA ---
+        function getTodaysRoutine() {
+            const today = new Date();
+            const dayOfWeek = today.getDay(); // 0 = Domingo, 1 = Lunes, etc.
+            
+            // Mapeo de días a rutinas
+            const routineSchedule = {
+                0: 'A',    // Domingo - Rutina A
+                1: 'A',    // Lunes - Rutina A
+                2: 'B',    // Martes - Rutina B
+                3: 'CORE', // Miércoles - Rutina C (Core)
+                4: 'A',    // Jueves - Rutina A
+                5: 'B',    // Viernes - Rutina B
+                6: 'CORE'  // Sábado - Rutina C (Core)
+            };
+            
+            return routineSchedule[dayOfWeek];
+        }
+
+        function getTodaysRoutineName() {
+            const routineKey = getTodaysRoutine();
+            const routineNames = {
+                'A': 'Rutina A - Fuerza Superior',
+                'B': 'Rutina B - Cardio Intenso', 
+                'CORE': 'Rutina C - Full Body & Core'
+            };
+            return routineNames[routineKey];
+        }
+
+        function getDayName() {
+            const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+            return days[new Date().getDay()];
+        }
+
         // --- ESTADO GLOBAL DE LA APP ---
         let state = {
             isRunning: false,
@@ -285,11 +1112,13 @@
             interval: null,
             timer: 0, // Segundos restantes
             currentPhase: 'SELECTION', // WARMUP, MAIN_CIRCUIT, COOLDOWN, FINISHED
-            currentRoutineKey: '', // A, B, CORE
+            currentRoutineKey: getTodaysRoutine(), // Auto-seleccionar rutina del día
             currentRoutineExercises: [],
             currentStepIndex: -1, // Índice dentro de la lista de la fase actual
             currentRound: 0, // Rondas para el MAIN_CIRCUIT (1 a 4)
             totalSteps: 0,
+            detailsOpenedManually: false, // Controlar si los detalles fueron abiertos manualmente
+            autoCloseTimeout: null, // Referencia al timeout de auto-cierre
         };
 
         // --- ELEMENTOS DEL DOM ---
@@ -298,8 +1127,12 @@
         const $phaseTitle = document.getElementById('phase-title');
         const $roundInfo = document.getElementById('round-info');
         const $exerciseName = document.getElementById('exercise-name');
+        const $progressText = document.getElementById('progress-text');
         const $timerBox = document.getElementById('timer-box');
         const $pauseButton = document.getElementById('pause-button');
+        const $playButton = document.getElementById('play-button');
+        const $fullControls = document.getElementById('full-controls');
+        const $startMessage = document.getElementById('start-message');
         const $resumeModal = document.getElementById('resume-modal');
         const $modalMessage = document.getElementById('modal-message');
         const $resumeButton = document.getElementById('resume-button');
@@ -401,9 +1234,13 @@
             // 1. Ocultar selección y mostrar temporizador
             $selectionScreen.classList.add('hidden');
             $timerScreen.classList.remove('hidden');
+            
+            // Ocultar botón de volver al inicio
+            document.getElementById('back-to-start-button').classList.add('hidden');
 
             state.currentRoutineKey = key;
             state.isRunning = true;
+            state.isPaused = true; // Iniciar pausado para mostrar botón de PLAY
             
             // 2. Construir la rutina completa
             state.currentRoutineExercises = buildRoutine(key);
@@ -415,6 +1252,7 @@
                 state.currentRound = savedProgress.currentRound;
                 state.currentStepIndex = savedProgress.currentStepIndex;
                 state.timer = savedProgress.timer;
+                state.isPaused = false; // Al reanudar, continuar automáticamente
 
                 // Si el tiempo es 0, avanzamos un paso (para empezar el siguiente ejercicio/descanso)
                 if (state.timer <= 0) {
@@ -422,10 +1260,11 @@
                 }
 
             } else {
-                // NUEVA: Iniciar desde el primer paso
+                // NUEVA: Iniciar desde el primer paso (pausado)
                 state.currentPhase = 'WARMUP';
                 state.currentStepIndex = -1;
                 state.currentRound = 0;
+                // state.isPaused ya está establecido en true arriba
             }
             
             // 3. Iniciar la secuencia desde el paso actual
@@ -630,6 +1469,9 @@
             
             // Actualizar la lista de historial
             loadHistoryFromJSON();
+            
+            // Actualizar calendario
+            renderCalendar();
         }
         
         // --- FUNCIÓN PARA CARGAR EL PROGRESO (FIREBASE + JSON) ---
@@ -741,6 +1583,9 @@
                 // Intentar cargar desde archivo físico primero
                 const physicalData = await loadFromPhysicalFile('loadHistory');
                 if (physicalData && Object.keys(physicalData).length > 0) {
+                    // Almacenar datos físicos globalmente para el calendario
+                    window.physicalHistoryData = physicalData;
+                    
                     let historyItems = [];
                     
                     Object.entries(physicalData).forEach(([date, data]) => {
@@ -752,6 +1597,7 @@
                     });
                     
                     displayHistory(historyItems, 'Archivo Físico');
+                    renderCalendar(); // Actualizar calendario cuando se cargan los datos
                     return;
                 }
 
@@ -838,7 +1684,23 @@
                 state.currentStepIndex++;
             }
             
-            if (state.isPaused) {
+            // Resetear el estado de detalles manuales al cambiar de ejercicio
+            state.detailsOpenedManually = false;
+            if (state.autoCloseTimeout) {
+                clearTimeout(state.autoCloseTimeout);
+                state.autoCloseTimeout = null;
+            }
+            
+            // Después del primer paso, el entrenamiento debe continuar automáticamente
+            // Solo pausar en el primer paso (calentamiento inicial)
+            if (state.currentStepIndex === 0) {
+                // Primer paso: mostrar botón INICIAR
+                if (state.isPaused) {
+                    $pauseButton.textContent = 'PAUSAR';
+                    $timerBox.classList.add('text-gray-500');
+                }
+            } else {
+                // Pasos subsiguientes: continuar automáticamente
                 state.isPaused = false;
                 $pauseButton.textContent = 'PAUSAR';
                 $timerBox.classList.remove('text-gray-500');
@@ -856,9 +1718,9 @@
             // 2. OBTENER PASO ACTUAL
             const currentStep = state.currentRoutineExercises[state.currentStepIndex];
 
-            if (isNavigation || state.timer <= 0) {
-                state.timer = currentStep.duration;
-            }
+            // Siempre resetear el timer al tiempo completo del ejercicio
+            // ya sea por navegación manual o por tiempo terminado
+            state.timer = currentStep.duration;
 
             // 3. ACTUALIZAR FASE y RONDAS
             state.currentPhase = currentStep.phase;
@@ -887,8 +1749,11 @@
             // 5. GUARDAR PROGRESO (Automático)
             saveProgress('auto');
             
-            // 6. INICIAR TEMPORIZADOR
+            // 6. INICIAR TEMPORIZADOR (solo si no está pausado)
             if (!state.isPaused) {
+                // Limpiar cualquier intervalo anterior antes de crear uno nuevo
+                clearInterval(state.interval);
+                
                 if (!currentStep.isRest) {
                     beep(880, 200, 0.7);
                 } else {
@@ -940,10 +1805,13 @@
         function tick() {
             if (state.isPaused) return;
 
-            state.timer--;
+            // Solo decrementar si el timer es mayor a 0
+            if (state.timer > 0) {
+                state.timer--;
+            }
             
             // 1. MANEJO DE SONIDOS DE ALERTA
-            if (state.timer > 0 && state.timer <= 3) {
+            if (state.timer > 0 && state.timer <= 5) {
                 beep(600, 100, 0.8);
             } else if (state.timer === 0) {
                 beep(1200, 400, 1.0);
@@ -955,12 +1823,18 @@
 
             // 3. CAMBIO DE PASO
             if (state.timer <= 0) {
-                state.currentStepIndex++;
-                nextStep(true); 
+                // Detener el interval inmediatamente para evitar valores negativos
+                clearInterval(state.interval);
+                nextStep(); // No pasar 'true' aquí, nextStep() ya maneja el incremento
             }
         }
 
         function updateDisplay(step) {
+            // Prevenir valores negativos del timer
+            if (state.timer < 0) {
+                state.timer = 0;
+            }
+            
             const minutes = Math.floor(state.timer / 60).toString().padStart(2, '0');
             const seconds = (state.timer % 60).toString().padStart(2, '0');
             $timerBox.textContent = `${minutes}:${seconds}`;
@@ -968,22 +1842,104 @@
             $phaseTitle.textContent = step.phase;
             $phaseTitle.className = `text-xl font-medium uppercase tracking-widest ${step.style || 'ready-color'}`;
             
-            const exerciseName = step.name;
+            let exerciseName = step.name;
+            
+            // Mostrar próximo ejercicio en los últimos 5 segundos
+            if (state.timer <= 5 && state.timer > 0 && !step.isRest) {
+                const nextStepIndex = state.currentStepIndex + 1;
+                if (nextStepIndex < state.currentRoutineExercises.length) {
+                    const nextStep = state.currentRoutineExercises[nextStepIndex];
+                    
+                    // No mostrar "PRÓXIMO:" si el siguiente es "¡Entrenamiento Terminado!"
+                    if (nextStep && nextStep.name !== "¡Entrenamiento Terminado!") {
+                        if (!nextStep.isRest) {
+                            exerciseName = `PRÓXIMO: ${nextStep.name}`;
+                            // Mostrar detalles del próximo ejercicio automáticamente
+                            updateExerciseDetails(nextStep.name);
+                            showExercisePreparation(nextStep.name, state.timer);
+                        } else if (nextStep.isRest) {
+                            // Si el próximo es descanso, buscar el ejercicio después del descanso
+                            const nextExerciseIndex = nextStepIndex + 1;
+                            if (nextExerciseIndex < state.currentRoutineExercises.length) {
+                                const nextExercise = state.currentRoutineExercises[nextExerciseIndex];
+                                if (nextExercise && !nextExercise.isRest && nextExercise.name !== "¡Entrenamiento Terminado!") {
+                                    exerciseName = `PRÓXIMO: ${nextExercise.name}`;
+                                    updateExerciseDetails(nextExercise.name);
+                                    showExercisePreparation(nextExercise.name, state.timer);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            
             $exerciseName.textContent = exerciseName;
             $timerBox.className = `timer-display mb-8 ${step.style || 'ready-color'}`;
 
-            // --- Lógica del botón de Búsqueda de Detalles (NUEVO) ---
+            // Actualizar indicador de progreso
+            updateProgressIndicator();
+
+            // Controlar visibilidad de botones al inicio
+            if (state.isPaused && state.currentStepIndex === 0) {
+                $playButton.classList.remove('hidden');
+                $fullControls.classList.add('hidden');
+                $startMessage.classList.remove('hidden');
+                $timerBox.classList.add('text-gray-500');
+            } else if (!state.isPaused) {
+                $playButton.classList.add('hidden');
+                $fullControls.classList.remove('hidden');
+                $startMessage.classList.add('hidden');
+                $timerBox.classList.remove('text-gray-500');
+            }
+
+            // --- Actualizar detalles del ejercicio ---
+            if (!step.isRest) {
+                // Para ejercicios normales, usar el nombre original del step, no el texto "PRÓXIMO:"
+                const originalExerciseName = step.name;
+                
+                // Solo mostrar detalles automáticamente si el ejercicio dice "PRÓXIMO"
+                if (exerciseName.includes('PRÓXIMO')) {
+                    // Ya se actualizaron los detalles en la sección anterior cuando se detectó "PRÓXIMO:"
+                    // No necesitamos hacer nada más aquí
+                } else {
+                    // Para ejercicios normales, actualizar con el nombre original
+                    updateExerciseDetails(originalExerciseName);
+                    
+                    // Solo asegurar que el botón esté disponible
+                    // NO forzar ocultar si fueron abiertos manualmente
+                    if (!state.detailsOpenedManually) {
+                        document.getElementById('exercise-details').classList.add('hidden');
+                        document.getElementById('show-details-button').classList.remove('hidden');
+                    }
+                }
+            } else {
+                // Durante descansos, verificar si menciona el próximo ejercicio
+                if (exerciseName.includes('Próximo:')) {
+                    // Extraer el nombre del próximo ejercicio
+                    const nextExerciseMatch = exerciseName.match(/Próximo:\s*(.+)/);
+                    if (nextExerciseMatch) {
+                        const nextExerciseName = nextExerciseMatch[1].trim();
+                        // Mostrar detalles del próximo ejercicio durante el descanso
+                        updateExerciseDetails(nextExerciseName);
+                        showExercisePreparation(nextExerciseName, state.timer);
+                    }
+                } else {
+                    // Descansos normales sin próximo ejercicio
+                    state.detailsOpenedManually = false; // Reset porque es descanso
+                    document.getElementById('exercise-details').classList.add('hidden');
+                    document.getElementById('show-details-button').classList.add('hidden');
+                    document.getElementById('preparation-indicator').classList.add('hidden');
+                }
+            }
+
+            // --- Lógica del botón de Búsqueda de Video ---
             if (step.phase === 'CIRCUITO PRINCIPAL' && !step.isRest) {
-                // Generar URL de búsqueda de Google Videos + Técnica
-                // Usamos `tbm=vid` para buscar videos de YouTube/Google sobre técnica
                 const searchQuery = encodeURIComponent(`${exerciseName} técnica video`);
                 $detailsLink.href = `https://www.google.com/search?tbm=vid&q=${searchQuery}`;
                 $detailsLink.classList.remove('hidden');
             } else {
-                // Ocultar el botón si es calentamiento, enfriamiento o descanso
                 $detailsLink.classList.add('hidden');
             }
-            // --------------------------------------------------------
 
             let progressText = `Paso ${state.currentStepIndex + 1} de ${state.totalSteps}.`;
             if (state.currentPhase === 'CIRCUITO PRINCIPAL' && state.currentRound > 0) {
@@ -1004,16 +1960,27 @@
                 progressText = `Ronda ${state.currentRound} de ${ROUNDS} | Ejercicio ${exerciseNumber} de ${totalExercises}`;
 
             } else if (state.currentPhase === 'WARMUP' || state.currentPhase === 'ENFRIAMIENTO') {
-                const totalInPhase = WORKOUT_STRUCTURE[state.currentPhase.replace(' ', '_').toUpperCase()].length;
-                let phaseStep;
+                // Mapear correctamente las fases a las propiedades de WORKOUT_STRUCTURE
+                const phaseMapping = {
+                    'WARMUP': 'WARMUP',
+                    'ENFRIAMIENTO': 'COOLDOWN'
+                };
+                
+                const structureKey = phaseMapping[state.currentPhase];
+                if (structureKey && WORKOUT_STRUCTURE[structureKey]) {
+                    const totalInPhase = WORKOUT_STRUCTURE[structureKey].length;
+                    let phaseStep;
 
-                if (state.currentPhase === 'WARMUP') {
-                    phaseStep = state.currentStepIndex + 1;
+                    if (state.currentPhase === 'WARMUP') {
+                        phaseStep = state.currentStepIndex + 1;
+                    } else {
+                        const cooldownStart = state.totalSteps - WORKOUT_STRUCTURE.COOLDOWN.length;
+                        phaseStep = state.currentStepIndex - cooldownStart + 1;
+                    }
+                    progressText = `Paso ${phaseStep} de ${totalInPhase}`;
                 } else {
-                    const cooldownStart = state.totalSteps - WORKOUT_STRUCTURE.COOLDOWN.length;
-                    phaseStep = state.currentStepIndex - cooldownStart + 1;
+                    progressText = `Paso ${state.currentStepIndex + 1} de ${state.totalSteps}`;
                 }
-                progressText = `Paso ${phaseStep} de ${totalInPhase}`;
             }
             
             $roundInfo.textContent = progressText;
@@ -1044,8 +2011,17 @@
             $timerBox.textContent = '00:00';
             $timerBox.className = 'timer-display mb-8 finished-color';
             $roundInfo.textContent = `Rutina ${state.currentRoutineKey} terminada.`;
+            $progressText.textContent = '¡Entrenamiento completado! 🎉';
 
+            // Ocultar controles del entrenamiento y mostrar botón de regreso
             $pauseButton.classList.add('hidden');
+            document.getElementById('full-controls').classList.add('hidden');
+            
+            // Mostrar botón para volver al inicio
+            showBackToStartButton();
+            
+            // Guardar el entrenamiento completado
+            logCompletedWorkout(state.currentRoutineKey);
         }
         
         window.resetWorkout = function() {
@@ -1069,12 +2045,581 @@
             $pauseButton.classList.remove('hidden');
             $pauseButton.textContent = 'PAUSAR';
             
+            // Ocultar botón de volver al inicio
+            document.getElementById('back-to-start-button').classList.add('hidden');
+            
             document.getElementById('progress-info').textContent = 'Selecciona una rutina para empezar.';
         }
+
+        // --- FUNCIONES PARA VOLVER AL INICIO ---
+        function showBackToStartButton() {
+            const backButton = document.getElementById('back-to-start-button');
+            if (backButton) {
+                backButton.classList.remove('hidden');
+            }
+        }
+
+        window.backToStart = function() {
+            // Limpiar progreso guardado
+            clearSavedProgress();
+            
+            // Resetear el estado global
+            state = {
+                isRunning: false,
+                isPaused: false,
+                interval: null,
+                timer: 0, 
+                currentPhase: 'SELECTION', 
+                currentRoutineKey: getTodaysRoutine(), // Volver a la rutina del día
+                currentRoutineExercises: [],
+                currentStepIndex: -1, 
+                currentRound: 0, 
+                totalSteps: 0,
+                detailsOpenedManually: false,
+                autoCloseTimeout: null,
+            };
+            
+            // Ocultar pantalla de entrenamiento y mostrar selección
+            $timerScreen.classList.add('hidden');
+            $selectionScreen.classList.remove('hidden');
+            
+            // Ocultar botón de volver al inicio
+            document.getElementById('back-to-start-button').classList.add('hidden');
+            
+            // Mostrar controles de entrenamiento normales
+            $pauseButton.classList.remove('hidden');
+            $pauseButton.textContent = 'PAUSAR';
+            
+            // Actualizar información del día
+            updateTodaysRoutineDisplay();
+            document.getElementById('progress-info').textContent = 'Tu centro de entrenamiento completo';
+            
+            // Recargar historial y calendario (para reflejar el nuevo entrenamiento completado)
+            loadHistory();
+            renderCalendar();
+            
+            console.log('🏠 Regresando al inicio - Rutina completada guardada');
+        }
+
+        // --- FUNCIONES PARA RUTINA DEL DÍA ---
+        function startTodaysWorkout() {
+            const todaysRoutine = getTodaysRoutine();
+            startWorkout(todaysRoutine);
+        }
+
+        function showRoutineSelector() {
+            // Crear un modal simple para elegir rutina
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-gray-800 p-6 rounded-xl max-w-sm w-full mx-4">
+                    <h3 class="text-xl font-bold text-white mb-4 text-center">Elegir Rutina</h3>
+                    <div class="space-y-3">
+                        <button onclick="selectRoutine('A')" class="w-full py-3 rounded-lg bg-orange-500 hover:bg-orange-600 transition-colors text-white font-semibold">
+                            Rutina A - Fuerza Superior
+                        </button>
+                        <button onclick="selectRoutine('B')" class="w-full py-3 rounded-lg bg-orange-500 hover:bg-orange-600 transition-colors text-white font-semibold">
+                            Rutina B - Cardio Intenso
+                        </button>
+                        <button onclick="selectRoutine('CORE')" class="w-full py-3 rounded-lg bg-blue-500 hover:bg-blue-600 transition-colors text-white font-semibold">
+                            Rutina C - Full Body & Core
+                        </button>
+                        <button onclick="closeRoutineSelector()" class="w-full py-2 rounded-lg bg-gray-600 hover:bg-gray-500 transition-colors text-gray-300">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            window.currentModal = modal;
+        }
+
+        function selectRoutine(routineKey) {
+            state.currentRoutineKey = routineKey;
+            updateTodaysRoutineDisplay();
+            closeRoutineSelector();
+            startWorkout(routineKey);
+        }
+
+        function closeRoutineSelector() {
+            if (window.currentModal) {
+                document.body.removeChild(window.currentModal);
+                window.currentModal = null;
+            }
+        }
+
+        function updateTodaysRoutineDisplay() {
+            const todayElement = document.getElementById('today-info');
+            const routineElement = document.getElementById('todays-routine');
+            
+            if (todayElement) {
+                todayElement.textContent = `📅 ${getDayName()}`;
+            }
+            
+            if (routineElement) {
+                routineElement.textContent = getTodaysRoutineName();
+            }
+        }
+
+        // Función para iniciar el cronómetro (botón PLAY)
+        function startTimer() {
+            if (!state.isRunning) return;
+            
+            state.isPaused = false;
+            $playButton.classList.add('hidden');
+            $fullControls.classList.remove('hidden');
+            $startMessage.classList.add('hidden');
+            $pauseButton.textContent = 'PAUSAR';
+            $timerBox.classList.remove('text-gray-500');
+            
+            // Iniciar el cronómetro
+            const currentStep = state.currentRoutineExercises[state.currentStepIndex];
+            if (currentStep) {
+                if (!currentStep.isRest) {
+                    beep(880, 200, 0.7);
+                } else {
+                    beep(440, 100, 0.5);
+                }
+                state.interval = setInterval(tick, 1000);
+            }
+        }
+
+        // --- FUNCIONES DEL CALENDARIO ---
+        function renderCalendar() {
+            const calendarDays = document.getElementById('calendar-days');
+            const monthYearDisplay = document.getElementById('calendar-month-year');
+            
+            if (!calendarDays || !monthYearDisplay) return;
+
+            // Nombres de los meses
+            const monthNames = [
+                'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+            ];
+
+            // Actualizar título del mes
+            monthYearDisplay.textContent = `${monthNames[currentCalendarMonth]} ${currentCalendarYear}`;
+
+            // Obtener información del mes
+            const firstDay = new Date(currentCalendarYear, currentCalendarMonth, 1);
+            const lastDay = new Date(currentCalendarYear, currentCalendarMonth + 1, 0);
+            const startDate = firstDay.getDay(); // Día de la semana del primer día
+            const daysInMonth = lastDay.getDate();
+
+            // Limpiar calendario
+            calendarDays.innerHTML = '';
+
+            // Agregar días vacíos al inicio
+            for (let i = 0; i < startDate; i++) {
+                const emptyDay = document.createElement('div');
+                emptyDay.className = 'h-8';
+                calendarDays.appendChild(emptyDay);
+            }
+
+            // Agregar días del mes
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dayElement = document.createElement('div');
+                const currentDate = new Date(currentCalendarYear, currentCalendarMonth, day);
+                const dateString = formatDateForComparison(currentDate);
+                const today = new Date();
+                const todayString = formatDateForComparison(today);
+
+                // Clases base
+                dayElement.className = 'h-8 w-8 rounded text-xs flex items-center justify-center font-medium transition-colors cursor-pointer';
+                dayElement.textContent = day;
+
+                // Determinar el estado del día
+                if (dateString === todayString) {
+                    // Hoy
+                    dayElement.className += ' bg-blue-500 text-white';
+                } else if (isWorkoutCompleted(dateString)) {
+                    // Día completado
+                    dayElement.className += ' bg-green-500 text-white hover:bg-green-600';
+                } else if (currentDate < today) {
+                    // Día pasado sin completar
+                    dayElement.className += ' bg-red-500 text-white hover:bg-red-600';
+                } else {
+                    // Día futuro
+                    dayElement.className += ' bg-gray-600 text-gray-300 hover:bg-gray-500';
+                }
+
+                // Agregar evento click para mostrar detalles
+                dayElement.addEventListener('click', () => showDayDetails(currentDate, dateString));
+                
+                calendarDays.appendChild(dayElement);
+            }
+
+            // Actualizar estadísticas
+            updateCalendarStats();
+        }
+
+        function changeCalendarMonth(direction) {
+            currentCalendarMonth += direction;
+            
+            if (currentCalendarMonth > 11) {
+                currentCalendarMonth = 0;
+                currentCalendarYear++;
+            } else if (currentCalendarMonth < 0) {
+                currentCalendarMonth = 11;
+                currentCalendarYear--;
+            }
+            
+            renderCalendar();
+        }
+
+        function formatDateForComparison(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        function isWorkoutCompleted(dateString) {
+            // Verificar en localStorage primero
+            const workoutData = JSON.parse(localStorage.getItem('workout_data') || '{}');
+            if (workoutData.history && workoutData.history[dateString]) {
+                return true;
+            }
+
+            // Verificar en datos físicos cargados (si están disponibles)
+            if (window.physicalHistoryData && window.physicalHistoryData[dateString]) {
+                return true;
+            }
+
+            return false;
+        }
+
+        function showDayDetails(date, dateString) {
+            const dayName = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][date.getDay()];
+            const formattedDate = date.toLocaleDateString('es-ES', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+
+            const isCompleted = isWorkoutCompleted(dateString);
+            const today = new Date();
+            const todayString = formatDateForComparison(today);
+
+            let message = `📅 ${dayName}, ${formattedDate}\n\n`;
+            
+            if (dateString === todayString) {
+                message += '🎯 ¡HOY! ' + getTodaysRoutineName();
+            } else if (isCompleted) {
+                const workoutData = JSON.parse(localStorage.getItem('workout_data') || '{}');
+                const dayData = workoutData.history[dateString];
+                message += `✅ Completado: Rutina ${dayData.routine}`;
+            } else if (date < today) {
+                message += '❌ No completado';
+            } else {
+                // Determinar qué rutina toca ese día
+                const routineForDay = getRutineForDate(date);
+                message += `📋 Programado: ${routineForDay}`;
+            }
+
+            alert(message);
+        }
+
+        function getRutineForDate(date) {
+            const dayOfWeek = date.getDay();
+            const routineSchedule = {
+                0: 'Rutina A - Fuerza Superior',    // Domingo
+                1: 'Rutina A - Fuerza Superior',    // Lunes
+                2: 'Rutina B - Cardio Intenso',     // Martes
+                3: 'Rutina C - Full Body & Core',   // Miércoles
+                4: 'Rutina A - Fuerza Superior',    // Jueves
+                5: 'Rutina B - Cardio Intenso',     // Viernes
+                6: 'Rutina C - Full Body & Core'    // Sábado
+            };
+            return routineSchedule[dayOfWeek];
+        }
+
+        function updateCalendarStats() {
+            const today = new Date();
+            const firstDay = new Date(currentCalendarYear, currentCalendarMonth, 1);
+            const lastDay = new Date(currentCalendarYear, currentCalendarMonth + 1, 0);
+            
+            let completed = 0;
+            let missed = 0;
+            let currentStreak = 0;
+            let totalPastDays = 0;
+
+            // Recorrer todos los días del mes hasta hoy
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const currentDate = new Date(currentCalendarYear, currentCalendarMonth, day);
+                const dateString = formatDateForComparison(currentDate);
+                
+                // Solo contar días pasados (no incluir hoy ni días futuros)
+                if (currentDate < today) {
+                    totalPastDays++;
+                    
+                    if (isWorkoutCompleted(dateString)) {
+                        completed++;
+                    } else {
+                        missed++;
+                    }
+                }
+            }
+
+            // Calcular racha actual (días consecutivos completados hacia atrás desde ayer)
+            let checkDate = new Date(today);
+            checkDate.setDate(checkDate.getDate() - 1); // Empezar desde ayer
+            
+            while (checkDate >= firstDay && checkDate.getMonth() === currentCalendarMonth) {
+                const dateString = formatDateForComparison(checkDate);
+                if (isWorkoutCompleted(dateString)) {
+                    currentStreak++;
+                    checkDate.setDate(checkDate.getDate() - 1);
+                } else {
+                    break;
+                }
+            }
+
+            // Calcular porcentaje
+            const percentage = totalPastDays > 0 ? Math.round((completed / totalPastDays) * 100) : 0;
+
+            // Actualizar elementos del DOM
+            const completedElement = document.getElementById('completed-count');
+            const missedElement = document.getElementById('missed-count');
+            const streakElement = document.getElementById('streak-count');
+            const percentageElement = document.getElementById('completion-percentage');
+
+            if (completedElement) completedElement.textContent = completed;
+            if (missedElement) missedElement.textContent = missed;
+            if (streakElement) streakElement.textContent = currentStreak + ' días';
+            if (percentageElement) percentageElement.textContent = percentage + '%';
+        }
+
+        // --- FUNCIONES DEL PERFIL DE USUARIO ---
+        function loadUserProfile() {
+            const profile = JSON.parse(localStorage.getItem('user_profile') || '{}');
+            
+            if (Object.keys(profile).length > 0) {
+                // Mostrar datos en el display
+                document.getElementById('display-height').textContent = profile.height ? profile.height + ' cm' : '- cm';
+                document.getElementById('display-weight').textContent = profile.weight ? profile.weight + ' kg' : '- kg';
+                document.getElementById('display-age').textContent = profile.age ? profile.age + ' años' : '- años';
+                document.getElementById('display-activity').textContent = getActivityLevelText(profile.activity) || '-';
+
+                // Calcular y mostrar IMC
+                if (profile.height && profile.weight) {
+                    const bmi = calculateBMI(profile.height, profile.weight);
+                    const category = getBMICategory(bmi);
+                    document.getElementById('display-bmi').textContent = bmi.toFixed(1);
+                    document.getElementById('display-bmi-category').textContent = `(${category})`;
+                }
+
+                // Cargar datos en el formulario
+                if (document.getElementById('input-height')) document.getElementById('input-height').value = profile.height || '';
+                if (document.getElementById('input-weight')) document.getElementById('input-weight').value = profile.weight || '';
+                if (document.getElementById('input-age')) document.getElementById('input-age').value = profile.age || '';
+                if (document.getElementById('input-gender')) document.getElementById('input-gender').value = profile.gender || '';
+                if (document.getElementById('input-activity')) document.getElementById('input-activity').value = profile.activity || '';
+            }
+
+            // Cargar historial de peso
+            loadWeightHistory();
+        }
+
+        function toggleProfileEditor() {
+            const editor = document.getElementById('profile-editor');
+            const isHidden = editor.classList.contains('hidden');
+            
+            if (isHidden) {
+                editor.classList.remove('hidden');
+                loadUserProfile(); // Cargar datos actuales
+            } else {
+                editor.classList.add('hidden');
+            }
+        }
+
+        function saveUserProfile() {
+            const profile = {
+                height: parseFloat(document.getElementById('input-height').value) || null,
+                weight: parseFloat(document.getElementById('input-weight').value) || null,
+                age: parseInt(document.getElementById('input-age').value) || null,
+                gender: document.getElementById('input-gender').value || null,
+                activity: document.getElementById('input-activity').value || null,
+                lastUpdated: new Date().toISOString()
+            };
+
+            // Validaciones básicas
+            if (profile.height && (profile.height < 100 || profile.height > 250)) {
+                alert('❌ La altura debe estar entre 100 y 250 cm');
+                return;
+            }
+
+            if (profile.weight && (profile.weight < 30 || profile.weight > 300)) {
+                alert('❌ El peso debe estar entre 30 y 300 kg');
+                return;
+            }
+
+            if (profile.age && (profile.age < 13 || profile.age > 100)) {
+                alert('❌ La edad debe estar entre 13 y 100 años');
+                return;
+            }
+
+            // Guardar perfil
+            localStorage.setItem('user_profile', JSON.stringify(profile));
+
+            // Si cambió el peso, agregarlo al historial
+            const currentProfile = JSON.parse(localStorage.getItem('user_profile') || '{}');
+            if (profile.weight && profile.weight !== currentProfile.weight) {
+                addWeightEntry(profile.weight, false); // No mostrar alerta de éxito
+            }
+
+            // Actualizar display
+            loadUserProfile();
+            
+            // Ocultar editor
+            document.getElementById('profile-editor').classList.add('hidden');
+            
+            alert('✅ Perfil guardado exitosamente');
+        }
+
+        function calculateBMI(height, weight) {
+            const heightInMeters = height / 100;
+            return weight / (heightInMeters * heightInMeters);
+        }
+
+        function getBMICategory(bmi) {
+            if (bmi < 18.5) return 'Bajo peso';
+            if (bmi < 25) return 'Normal';
+            if (bmi < 30) return 'Sobrepeso';
+            return 'Obesidad';
+        }
+
+        function getActivityLevelText(level) {
+            const levels = {
+                'sedentary': 'Sedentario',
+                'light': 'Ligero',
+                'moderate': 'Moderado',
+                'active': 'Activo',
+                'very-active': 'Muy activo'
+            };
+            return levels[level] || '';
+        }
+
+        function addWeightEntry(weight = null, showAlert = true) {
+            const weightInput = document.getElementById('new-weight');
+            const newWeight = weight || parseFloat(weightInput.value);
+            
+            if (!newWeight || newWeight < 30 || newWeight > 300) {
+                alert('❌ Ingresa un peso válido entre 30 y 300 kg');
+                return;
+            }
+
+            // Obtener historial actual
+            const weightHistory = JSON.parse(localStorage.getItem('weight_history') || '[]');
+            
+            // Agregar nueva entrada
+            const entry = {
+                weight: newWeight,
+                date: new Date().toISOString(),
+                dateString: formatDateForComparison(new Date())
+            };
+
+            weightHistory.unshift(entry); // Agregar al inicio (más reciente)
+
+            // Mantener solo los últimos 50 registros
+            if (weightHistory.length > 50) {
+                weightHistory.splice(50);
+            }
+
+            // Guardar
+            localStorage.setItem('weight_history', JSON.stringify(weightHistory));
+
+            // Actualizar perfil con el peso más reciente
+            const profile = JSON.parse(localStorage.getItem('user_profile') || '{}');
+            profile.weight = newWeight;
+            profile.lastWeightUpdate = new Date().toISOString();
+            localStorage.setItem('user_profile', JSON.stringify(profile));
+
+            // Limpiar input y recargar
+            if (weightInput) weightInput.value = '';
+            loadUserProfile();
+
+            if (showAlert) {
+                alert('✅ Peso registrado exitosamente');
+            }
+        }
+
+        function loadWeightHistory() {
+            const weightHistory = JSON.parse(localStorage.getItem('weight_history') || '[]');
+            const container = document.getElementById('weight-history');
+            
+            if (!container) return;
+
+            if (weightHistory.length === 0) {
+                container.innerHTML = '<p class="text-gray-400 text-xs">No hay registros de peso aún</p>';
+                return;
+            }
+
+            let html = '';
+            weightHistory.slice(0, 10).forEach((entry, index) => { // Mostrar solo los últimos 10
+                const date = new Date(entry.date);
+                const formattedDate = date.toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+                
+                const weightChange = index < weightHistory.length - 1 ? 
+                    entry.weight - weightHistory[index + 1].weight : 0;
+                
+                let changeIcon = '';
+                let changeClass = '';
+                if (weightChange > 0) {
+                    changeIcon = '📈';
+                    changeClass = 'text-red-400';
+                } else if (weightChange < 0) {
+                    changeIcon = '📉';
+                    changeClass = 'text-green-400';
+                } else {
+                    changeIcon = '➖';
+                    changeClass = 'text-gray-400';
+                }
+
+                html += `
+                    <div class="flex justify-between items-center py-1 border-b border-gray-600 last:border-b-0">
+                        <span class="text-xs text-gray-300">${formattedDate}</span>
+                        <div class="flex items-center gap-2">
+                            <span class="font-semibold text-white">${entry.weight} kg</span>
+                            <span class="${changeClass} text-xs">${changeIcon}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        // Hacer funciones disponibles globalmente
+        window.startTodaysWorkout = startTodaysWorkout;
+        window.showRoutineSelector = showRoutineSelector;
+        window.selectRoutine = selectRoutine;
+        window.closeRoutineSelector = closeRoutineSelector;
+        window.startTimer = startTimer;
+        window.changeCalendarMonth = changeCalendarMonth;
+        window.toggleProfileEditor = toggleProfileEditor;
+        window.saveUserProfile = saveUserProfile;
+        window.addWeightEntry = addWeightEntry;
         
         // --- INICIALIZACIÓN DE FIREBASE Y AUTH ---
         async function initApp() {
             // setLogLevel('debug'); 
+
+            // Actualizar información del día actual
+            console.log('📅 HOY ES:', getDayName().toUpperCase());
+            console.log('🎯 TU RUTINA:', getTodaysRoutineName());
+            console.log('💪 ¡Todo listo para entrenar!');
+            updateTodaysRoutineDisplay();
+
+            // Renderizar calendario
+            renderCalendar();
+
+            // Cargar perfil de usuario
+            loadUserProfile();
 
             // Diagnóstico de variables de entorno
             console.log("=== DIAGNÓSTICO DE FIREBASE ===");
@@ -1089,13 +2634,24 @@
             // Verificar si la configuración de Firebase está vacía
             if (Object.keys(firebaseConfig).length === 0) {
                  console.error("Firebase Config está vacío. El historial y el guardado de progreso no funcionarán.");
-                 console.warn("SOLUCIÓN: Este es un entorno local. La app funcionará sin persistencia.");
-                 $loadingSpinner.innerHTML = '<p class="text-yellow-400 font-semibold">Modo local: Sin conexión a Firebase</p>';
+                 console.warn("SOLUCIÓN: Este es un entorno local. La app funcionará con archivos físicos.");
+                 $loadingSpinner.innerHTML = '<p class="text-yellow-400 font-semibold">Modo local: Usando archivos físicos</p>';
                  $workoutButtons.classList.remove('hidden');
-                 isAuthReady = false; // Auth siempre falla si no hay config
-                 document.getElementById('loading-history').textContent = 'Historial no disponible en modo local.';
-                 $userIdDisplay.textContent = 'Usuario local (sin persistencia)';
-                 return; // Salir de la función de inicialización de Firebase
+                 isAuthReady = false;
+                 
+                 // Usar el sistema de ID mejorado para modo local
+                 userId = getUserId();
+                 const customId = localStorage.getItem('customUserId');
+                 const idType = customId ? ' (personalizado)' : ' (local)';
+                 $userIdDisplay.textContent = userId + idType;
+                 
+                 document.getElementById('loading-history').textContent = 'Cargando desde archivos físicos...';
+                 
+                 // Cargar datos desde archivos físicos
+                 loadHistory();
+                 loadProgress();
+                 
+                 return;
             }
 
             try {
@@ -1119,11 +2675,15 @@
                     console.log("✓ Autenticación anónima exitosa");
                 }
 
-                userId = auth.currentUser?.uid || crypto.randomUUID();
+                // Usar el sistema de ID mejorado
+                userId = getUserId();
                 isAuthReady = true;
                 
-                $userIdDisplay.textContent = userId;
-                console.log(`✓ Usuario autenticado con ID: ${userId}`);
+                // Mostrar tipo de ID en la interfaz
+                const customId = localStorage.getItem('customUserId');
+                const idType = customId ? ' (personalizado)' : ' (Firebase)';
+                $userIdDisplay.textContent = userId + idType;
+                console.log(`✓ Usuario autenticado con ID: ${userId}${idType}`);
 
                 // Ocultar spinner y mostrar botones SOLO después de que isAuthReady es TRUE
                 $loadingSpinner.classList.add('hidden');
@@ -1172,9 +2732,256 @@
                 
                 $loadingSpinner.innerHTML = `<p class="text-red-400 font-semibold">${errorMessage}</p>`;
                 $workoutButtons.classList.remove('hidden');
-                document.getElementById('loading-history').textContent = `Error: ${errorMessage}`;
-                $userIdDisplay.textContent = 'Error de autenticación';
+                
+                // Usar el sistema de ID mejorado incluso con errores
+                userId = getUserId();
+                const customId = localStorage.getItem('customUserId');
+                const idType = customId ? ' (personalizado)' : ' (local)';
+                $userIdDisplay.textContent = userId + idType;
+                
+                document.getElementById('loading-history').textContent = `Error Firebase - Usando archivos locales`;
+                
+                // Cargar desde archivos físicos y localStorage
+                loadHistory();
+                loadProgress();
             }
+        }
+
+        // --- FUNCIONES DE DETALLES DE EJERCICIOS ---
+        
+        // Función para mostrar/ocultar detalles del ejercicio
+        window.toggleExerciseDetails = function() {
+            const detailsDiv = document.getElementById('exercise-details');
+            const showButton = document.getElementById('show-details-button');
+            const toggleButton = document.getElementById('toggle-details');
+            
+            if (detailsDiv.classList.contains('hidden')) {
+                // Marcar que fue abierto manualmente
+                state.detailsOpenedManually = true;
+                
+                // Cancelar cualquier auto-cierre programado
+                if (state.autoCloseTimeout) {
+                    clearTimeout(state.autoCloseTimeout);
+                    state.autoCloseTimeout = null;
+                }
+                
+                detailsDiv.classList.remove('hidden');
+                showButton.classList.add('hidden');
+                toggleButton.textContent = '▲ Ocultar Detalles';
+            } else {
+                // Marcar que fue cerrado manualmente
+                state.detailsOpenedManually = false;
+                
+                detailsDiv.classList.add('hidden');
+                showButton.classList.remove('hidden');
+                toggleButton.textContent = '▼ Ver Detalles';
+            }
+        }
+        
+        // Función para ocultar los detalles del ejercicio
+        window.hideExerciseDetails = function() {
+            const detailsDiv = document.getElementById('exercise-details');
+            const showButton = document.getElementById('show-details-button');
+            const toggleButton = document.getElementById('toggle-details');
+            const indicator = document.getElementById('preparation-indicator');
+            
+            detailsDiv.classList.add('hidden');
+            showButton.classList.remove('hidden');
+            toggleButton.textContent = '▼ Ver Detalles';
+            
+            // Ocultar también el indicador de preparación
+            if (indicator) {
+                indicator.classList.add('hidden');
+            }
+        }
+
+        // Función para actualizar el indicador de progreso
+        function updateProgressIndicator() {
+            if (!state.isRunning || !$progressText || !state.currentRoutineExercises) return;
+            
+            const currentStep = state.currentStepIndex + 1;
+            const totalSteps = state.currentRoutineExercises.length;
+            const currentPhase = state.currentRoutineExercises[state.currentStepIndex]?.phase || '';
+            
+            // Verificar que tenemos datos válidos
+            if (totalSteps === 0 || currentStep <= 0) {
+                $progressText.textContent = 'Preparándose...';
+                return;
+            }
+            
+            // Contar ejercicios en la fase actual
+            const phaseSteps = state.currentRoutineExercises.filter(step => step.phase === currentPhase && !step.isRest);
+            
+            if (phaseSteps.length > 0) {
+                // Calcular cuántos ejercicios de esta fase hemos completado
+                let completedInPhase = 0;
+                for (let i = 0; i <= state.currentStepIndex; i++) {
+                    const step = state.currentRoutineExercises[i];
+                    if (step && step.phase === currentPhase && !step.isRest) {
+                        completedInPhase++;
+                    }
+                }
+                
+                const phaseProgress = Math.max(1, completedInPhase);
+                const phaseTotal = phaseSteps.length;
+                $progressText.textContent = `${phaseProgress} de ${phaseTotal} ejercicios • Paso ${currentStep}/${totalSteps}`;
+            } else {
+                $progressText.textContent = `Paso ${currentStep} de ${totalSteps}`;
+            }
+        }
+
+        // Función para actualizar los detalles del ejercicio
+        function updateExerciseDetails(exerciseName) {
+            const exercise = EXERCISE_DATABASE[exerciseName];
+            
+            if (!exercise) {
+                // Si no hay datos del ejercicio, ocultar todos los detalles
+                document.getElementById('exercise-details').classList.add('hidden');
+                document.getElementById('show-details-button').classList.add('hidden');
+                return;
+            }
+
+            // Mostrar el botón para ver detalles
+            document.getElementById('show-details-button').classList.remove('hidden');
+
+            // Actualizar la información básica
+            document.getElementById('exercise-category').textContent = exercise.category.toUpperCase();
+            document.getElementById('exercise-equipment').textContent = exercise.equipment || 'N/A';
+            document.getElementById('exercise-muscles').textContent = exercise.muscles.join(', ');
+            document.getElementById('exercise-description').textContent = exercise.description;
+
+            // Actualizar instrucciones
+            const instructionsList = document.getElementById('instructions-list');
+            instructionsList.innerHTML = '';
+            exercise.instructions.forEach(instruction => {
+                const li = document.createElement('li');
+                li.className = 'text-gray-200';
+                li.textContent = instruction;
+                instructionsList.appendChild(li);
+            });
+
+            // Actualizar tips
+            const tipsList = document.getElementById('tips-list');
+            tipsList.innerHTML = '';
+            exercise.tips.forEach(tip => {
+                const li = document.createElement('li');
+                li.className = 'text-gray-200';
+                li.textContent = tip;
+                tipsList.appendChild(li);
+            });
+
+            console.log(`✅ Detalles actualizados para: ${exerciseName}`);
+        }
+
+        // Función para mostrar detalles automáticamente durante el tiempo de preparación
+        function showExercisePreparation(exerciseName, preparationTime = 10) {
+            updateExerciseDetails(exerciseName);
+            
+            // Determinar si debe mostrar automáticamente (ejercicios "PRÓXIMO" o durante descansos con "Próximo:")
+            const shouldShowAuto = exerciseName.includes('PRÓXIMO') || 
+                                  (state.currentRoutineExercises[state.currentStepIndex]?.isRest && 
+                                   state.currentRoutineExercises[state.currentStepIndex]?.name.includes('Próximo:'));
+            
+            if (shouldShowAuto) {
+                // Mostrar indicador de preparación
+                const indicator = document.getElementById('preparation-indicator');
+                if (indicator) {
+                    indicator.classList.remove('hidden');
+                }
+                
+                // Mostrar automáticamente los detalles si hay tiempo de preparación y no fueron abiertos manualmente
+                if (preparationTime >= 1 && !state.detailsOpenedManually) {
+                    const detailsDiv = document.getElementById('exercise-details');
+                    const showButton = document.getElementById('show-details-button');
+                    
+                    detailsDiv.classList.remove('hidden');
+                    showButton.classList.add('hidden');
+                    
+                    // Cancelar timeout anterior si existe
+                    if (state.autoCloseTimeout) {
+                        clearTimeout(state.autoCloseTimeout);
+                    }
+                    
+                    // Para descansos, mantener abierto todo el tiempo de descanso
+                    // Para ejercicios con "PRÓXIMO", auto-ocultar cerca del final
+                    const isRestPeriod = state.currentRoutineExercises[state.currentStepIndex]?.isRest;
+                    
+                    if (!isRestPeriod && preparationTime > 5) {
+                        // Auto-ocultar después del tiempo de preparación (solo si no fue abierto manualmente y no es descanso)
+                        state.autoCloseTimeout = setTimeout(() => {
+                            // Solo cerrar si no fue abierto manualmente
+                            if (!state.detailsOpenedManually && !detailsDiv.classList.contains('hidden')) {
+                                detailsDiv.classList.add('hidden');
+                                showButton.classList.remove('hidden');
+                            }
+                            // Ocultar también el indicador
+                            if (indicator) {
+                                indicator.classList.add('hidden');
+                            }
+                            state.autoCloseTimeout = null;
+                        }, (preparationTime - 2) * 1000); // Ocultar 2 segundos antes de que empiece
+                    }
+                }
+            }
+        }
+
+        // --- FUNCIONES DE GESTIÓN DE USUARIO ---
+        
+        // Función para cambiar el ID de usuario
+        window.changeUserId = function() {
+            const newUserId = document.getElementById('custom-user-id').value.trim();
+            
+            if (!newUserId) {
+                alert('Por favor, ingresa un ID de usuario válido.');
+                return;
+            }
+            
+            // Validar formato del ID
+            if (!/^[a-zA-Z0-9\-_]{3,20}$/.test(newUserId)) {
+                alert('El ID debe tener entre 3 y 20 caracteres y solo puede contener letras, números, guiones y guiones bajos.');
+                return;
+            }
+            
+            if (confirm(`¿Cambiar tu ID de usuario a "${newUserId}"?\n\n⚠️ Esto creará una nueva carpeta de datos.\n\nTus datos actuales permanecerán en la carpeta anterior.`)) {
+                
+                // Guardar el ID personalizado en localStorage
+                localStorage.setItem('customUserId', newUserId);
+                userId = newUserId;
+                
+                // Actualizar la interfaz
+                $userIdDisplay.textContent = userId + ' (personalizado)';
+                document.getElementById('custom-user-id').value = '';
+                
+                // Recargar historial y progreso con el nuevo ID
+                loadHistory();
+                loadProgress();
+                
+                console.log(`✅ ID de usuario cambiado a: ${userId}`);
+                alert(`✅ ID cambiado exitosamente a "${userId}"\n\nTus nuevos datos se guardarán en:\ndata/users/${userId}/`);
+            }
+        }
+        
+        // Función para obtener el ID de usuario (con prioridades)
+        function getUserId() {
+            // 1. ID personalizado guardado
+            const customId = localStorage.getItem('customUserId');
+            if (customId) {
+                return customId;
+            }
+            
+            // 2. ID de Firebase (si está disponible)
+            if (isAuthReady && auth.currentUser?.uid) {
+                return auth.currentUser.uid;
+            }
+            
+            // 3. ID aleatorio generado
+            let generatedId = localStorage.getItem('generatedUserId');
+            if (!generatedId) {
+                generatedId = 'user-' + Math.random().toString(36).substr(2, 8);
+                localStorage.setItem('generatedUserId', generatedId);
+            }
+            
+            return generatedId;
         }
 
         // --- FUNCIONES DE GESTIÓN DE DATOS JSON ---
@@ -1199,6 +3006,18 @@
                 if (!data.history && !data.progress) {
                     data = JSON.parse(localStorage.getItem('workout_data') || '{}');
                     console.log("⚠️ Usando datos de localStorage para descarga");
+                }
+
+                // Agregar datos del perfil de usuario
+                const userProfile = JSON.parse(localStorage.getItem('user_profile') || '{}');
+                const weightHistory = JSON.parse(localStorage.getItem('weight_history') || '[]');
+                
+                if (Object.keys(userProfile).length > 0) {
+                    data.user_profile = userProfile;
+                }
+                
+                if (weightHistory.length > 0) {
+                    data.weight_history = weightHistory;
                 }
                 
                 // Agregar metadatos de exportación
@@ -1239,8 +3058,12 @@
                 // Actualizar interfaz
                 loadHistory();
                 loadProgress();
+                loadUserProfile();
                 
-                alert(`¡Datos importados exitosamente!\n\nHistorial: ${Object.keys(data.history || {}).length} entradas\nProgreso: ${data.progress ? 'Disponible' : 'No disponible'}`);
+                const profileCount = Object.keys(data.user_profile || {}).length;
+                const weightCount = (data.weight_history || []).length;
+                
+                alert(`¡Datos importados exitosamente!\n\nHistorial: ${Object.keys(data.history || {}).length} entradas\nProgreso: ${data.progress ? 'Disponible' : 'No disponible'}\nPerfil: ${profileCount > 0 ? 'Importado' : 'No disponible'}\nPeso: ${weightCount} registros`);
                 
                 // Limpiar el input
                 event.target.value = '';
@@ -1270,6 +3093,16 @@
                         if (data.progress) {
                             localStorage.setItem('workout_progress', JSON.stringify(data.progress));
                         }
+
+                        // Si hay perfil de usuario, guardarlo
+                        if (data.user_profile) {
+                            localStorage.setItem('user_profile', JSON.stringify(data.user_profile));
+                        }
+
+                        // Si hay historial de peso, guardarlo
+                        if (data.weight_history) {
+                            localStorage.setItem('weight_history', JSON.stringify(data.weight_history));
+                        }
                         
                         console.log("✅ Datos importados exitosamente:", data);
                         resolve(data);
@@ -1285,13 +3118,17 @@
 
         // Función para limpiar todos los datos locales
         window.clearAllData = function() {
-            if (confirm("⚠️ ¿Estás seguro de que quieres eliminar TODOS los datos locales?\n\nEsto incluye:\n- Historial de entrenamientos\n- Progreso guardado\n- Toda la información almacenada\n\nEsta acción NO se puede deshacer.")) {
+            if (confirm("⚠️ ¿Estás seguro de que quieres eliminar TODOS los datos locales?\n\nEsto incluye:\n- Historial de entrenamientos\n- Progreso guardado\n- Perfil de usuario\n- Historial de peso\n- Toda la información almacenada\n\nEsta acción NO se puede deshacer.")) {
                 try {
                     localStorage.removeItem('workout_data');
                     localStorage.removeItem('workout_progress');
+                    localStorage.removeItem('user_profile');
+                    localStorage.removeItem('weight_history');
                     
                     // Actualizar interfaz
                     $historyList.innerHTML = '<p class="text-gray-400">¡Aún no has completado ninguna rutina! ¡Empieza hoy!</p>';
+                    loadUserProfile(); // Recargar perfil vacío
+                    renderCalendar(); // Actualizar calendario
                     
                     console.log("✅ Todos los datos locales han sido eliminados");
                     alert("✅ Datos eliminados exitosamente.");

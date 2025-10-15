@@ -1,0 +1,1372 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rutina 30 Minutos - Rastreador</title>
+    <!-- Carga de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilo base y fuente Inter */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d1117; /* Fondo oscuro */
+        }
+        .timer-display {
+            font-size: 5rem;
+            line-height: 1;
+            font-weight: 700;
+        }
+        @media (min-width: 640px) {
+            .timer-display {
+                font-size: 8rem;
+            }
+        }
+        .work-color { color: #f97316; } /* Naranja/Cálido para trabajar */
+        .rest-color { color: #22c55e; } /* Verde para descansar */
+        .ready-color { color: #3b82f6; } /* Azul para preparación */
+        .finished-color { color: #eab308; } /* Amarillo para terminar */
+        
+        /* Estilo para el Modal de Reanudación */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #1f2937; /* Gris oscuro para el modal */
+            padding: 1.5rem;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.3);
+            max-width: 90%;
+            width: 400px;
+        }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary': '#f97316',
+                        'secondary': '#22c55e',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="text-white min-h-screen p-4 flex flex-col items-center">
+
+    <!-- Encabezado y Título -->
+    <header class="text-center mb-8 w-full max-w-lg">
+        <h1 class="text-3xl font-bold text-gray-100">Plan de Entrenamiento (30 min)</h1>
+        <p id="progress-info" class="text-sm text-gray-400 mt-2">Selecciona una rutina para empezar.</p>
+    </header>
+
+    <!-- Botones de Selección de Rutina -->
+    <section id="selection-screen" class="space-y-4 w-full max-w-sm mb-8">
+        <p class="text-lg font-semibold text-center text-gray-300">Días de la semana:</p>
+        
+        <!-- Indicador de Carga (Spinner) -->
+        <div id="loading-spinner" class="text-center p-4">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p class="mt-2 text-sm text-gray-400">Conectando con la base de datos...</p>
+        </div>
+
+        <!-- Botones de Rutina (Ocultos inicialmente) -->
+        <div id="workout-buttons" class="hidden space-y-4">
+            <button onclick="startWorkout('A')" class="w-full py-3 rounded-xl bg-primary hover:bg-orange-600 transition-colors shadow-lg font-semibold">
+                Circuito A (Lunes/Jueves)
+            </button>
+            <button onclick="startWorkout('B')" class="w-full py-3 rounded-xl bg-primary hover:bg-orange-600 transition-colors shadow-lg font-semibold">
+                Circuito B (Martes/Viernes)
+            </button>
+            <button onclick="startWorkout('CORE')" class="w-full py-3 rounded-xl bg-blue-500 hover:bg-blue-600 transition-colors shadow-lg font-semibold">
+                Descanso Activo/Core (Miércoles)
+            </button>
+        </div>
+    </section>
+
+    <!-- Display del Temporizador (Oculto inicialmente) -->
+    <main id="timer-screen" class="hidden flex flex-col items-center justify-center w-full max-w-lg p-6 bg-gray-800 rounded-2xl shadow-2xl transition-all duration-300">
+        
+        <!-- Nombre de la Fase y Progreso -->
+        <div class="mb-4 text-center">
+            <p id="phase-title" class="text-xl font-medium ready-color uppercase tracking-widest">CALENTAMIENTO</p>
+            <p id="round-info" class="text-md text-gray-400 mt-1"></p>
+        </div>
+
+        <!-- Nombre del Ejercicio -->
+        <h2 id="exercise-name" class="text-3xl sm:text-4xl text-center font-extrabold text-gray-50 mb-3 min-h-[3rem]">¡LISTO!</h2>
+        
+        <!-- Botón de Búsqueda de Detalles (NUEVO) -->
+        <a id="details-link" target="_blank" class="px-4 py-2 mb-6 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-md font-medium text-sm hidden">
+            Ver Video / Técnica
+        </a>
+
+        <!-- Temporizador -->
+        <div id="timer-box" class="timer-display work-color mb-8">
+            00:00
+        </div>
+
+        <!-- Botones de Control -->
+        <div class="flex flex-wrap justify-center gap-4">
+            <button onclick="togglePause()" id="pause-button" class="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors font-semibold flex-grow sm:flex-grow-0">
+                PAUSAR
+            </button>
+            <button onclick="nextStep()" class="px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors shadow-lg font-semibold flex-grow sm:flex-grow-0">
+                ADELANTAR
+            </button>
+            <button onclick="goBack()" class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold flex-grow sm:flex-grow-0">
+                ATRAS
+            </button>
+            <!-- Botón para guardado manual -->
+            <button onclick="saveProgress('manual')" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex-grow sm:flex-grow-0">
+                GUARDAR
+            </button>
+            <!-- Botón de Reinicio (oculto, solo para desarrollador/debugging) -->
+            <button onclick="resetWorkout()" id="reset-button" class="hidden">REINICIAR</button>
+        </div>
+
+    </main>
+
+    <!-- Historial de Rutinas Completadas -->
+    <section class="mt-10 w-full max-w-lg p-4 bg-gray-800 rounded-xl shadow-lg">
+        <h2 class="text-2xl font-bold mb-4 text-gray-100">Historial de Completados</h2>
+        <div id="history-list" class="space-y-2 max-h-60 overflow-y-auto">
+            <p class="text-gray-400" id="loading-history">Cargando historial...</p>
+        </div>
+        <p class="text-sm text-gray-500 mt-4">ID de Usuario: <span id="user-id">Cargando...</span></p>
+        <div class="mt-4 text-center space-y-2">
+            <button onclick="testFirebaseConnection()" class="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
+                🔧 Probar Conexión Firebase
+            </button>
+            <div class="flex flex-wrap gap-2 justify-center">
+                <button onclick="downloadDataAsJSON()" class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700 transition-colors">
+                    📥 Descargar JSON
+                </button>
+                <label for="json-file-import" class="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors cursor-pointer">
+                    📤 Importar JSON
+                </label>
+                <input type="file" id="json-file-import" accept=".json" style="display: none;" onchange="handleJSONImport(event)">
+                <button onclick="clearAllData()" class="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors">
+                    🗑️ Limpiar Datos
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modal de Confirmación de Reanudación de Progreso -->
+    <div id="resume-modal" class="modal-overlay hidden">
+        <div class="modal-content text-center">
+            <h3 class="text-xl font-bold mb-4 text-white">Progreso Encontrado</h3>
+            <p id="modal-message" class="text-gray-300 mb-6">Se encontró progreso de una rutina anterior.</p>
+            <div class="flex justify-around space-x-4">
+                <button id="resume-button" class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-semibold">
+                    REANUDAR
+                </button>
+                <button onclick="continueWithoutResume()" class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-semibold">
+                    COMENZAR NUEVA
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script type="module">
+        // Importaciones de Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, setLogLevel, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // Configuración y Variables Globales de Firebase (Proporcionadas por el entorno Canvas)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        
+        // Configuración de Firebase con fallback para desarrollo local
+        let firebaseConfig = {};
+        if (typeof __firebase_config !== 'undefined') {
+            firebaseConfig = JSON.parse(__firebase_config);
+        } else {
+            // CONFIGURACIÓN DE PRUEBA PARA DESARROLLO LOCAL
+            // 
+            // 🔥 PASOS PARA CONFIGURAR FIREBASE:
+            // 1. Ve a https://console.firebase.google.com/
+            // 2. Crea un nuevo proyecto (o usa uno existente)
+            // 3. Ve a "Configuración del proyecto" > "General"
+            // 4. En "Tus apps", selecciona "Web" (</>)
+            // 5. Registra tu app y copia la configuración
+            // 6. Habilita Authentication > Sign-in method > Anonymous
+            // 7. Habilita Firestore Database con reglas de prueba
+            // 
+            // ⚠️  REEMPLAZA ESTOS VALORES CON TU CONFIGURACIÓN REAL DE FIREBASE ⚠️
+            firebaseConfig = {
+                // Descomenta y completa estos campos con tu configuración real:
+                /*
+                apiKey: "tu-api-key-aqui",
+                authDomain: "tu-proyecto.firebaseapp.com",
+                projectId: "tu-proyecto-id",
+                storageBucket: "tu-proyecto.appspot.com",
+                messagingSenderId: "123456789",
+                appId: "1:123456789:web:abcdef123456"
+                */
+            };
+            
+            console.warn("🔧 USANDO CONFIGURACIÓN DE DESARROLLO LOCAL");
+            console.warn("Para habilitar Firebase, edita las líneas 172-179 con tu configuración real.");
+        }
+        
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        // Instancias de Firebase
+        let app, db, auth;
+        let userId = 'anonymous';
+        let isAuthReady = false;
+
+        // --- CONFIGURACIÓN DE RUTINAS Y TIEMPOS ---
+        const WORK_TIME = 45; // Segundos de trabajo para Circuito A/B
+        const REST_TIME = 15; // Segundos de descanso para Circuito A/B
+        const CORE_WORK_TIME = 45; // Usamos 45/15 para Core también por consistencia de ritmo
+        const CORE_REST_TIME = 15;
+        const ROUNDS = 4; // 4 rondas para todos los circuitos
+
+        const WORKOUT_STRUCTURE = {
+            WARMUP: [
+                { name: "Marcha en el sitio / Trote Suave", duration: 60, isRest: false, style: 'ready-color' },
+                { name: "Círculos de brazos (adelante y atrás)", duration: 60, isRest: false, style: 'ready-color' },
+                { name: "Oscilación de piernas (adelante y lados)", duration: 60, isRest: false, style: 'ready-color' },
+                { name: "Sentadillas corporales (lentas)", duration: 60, isRest: false, style: 'ready-color' },
+                { name: "Rotación de torso suave", duration: 60, isRest: false, style: 'ready-color' },
+            ],
+
+            COOLDOWN: [
+                { name: "Estiramiento de Cuádriceps (30s c/lado)", duration: 60, isRest: false, style: 'ready-color' },
+                { name: "Estiramiento de Isquiotibiales (toca pies)", duration: 60, isRest: false, style: 'ready-color' },
+                { name: "Estiramiento de Pecho (manos atrás)", duration: 60, isRest: false, style: 'ready-color' },
+                { name: "Estiramiento de Hombro (brazo cruzado)", duration: 60, isRest: false, style: 'ready-color' },
+                { name: "¡Entrenamiento Terminado!", duration: 60, isRest: false, style: 'finished-color' },
+            ],
+
+            CIRCUITO_A_EXERCISES: [
+                "Sentadilla Goblet (12kg)",
+                "Remo a una mano (12kg)",
+                "Zancada Inversa (12kg)",
+                "Press de Hombro (12kg)",
+                "Burpees sin Salto",
+            ],
+
+            CIRCUITO_B_EXERCISES: [
+                "Peso Muerto Rumano (12kg)",
+                "Dumbbell Thrusters (12kg)",
+                "Plancha (Plank)",
+                "Elevación de Talones (12kg)",
+                "Mountain Climbers",
+            ],
+
+            CORE_EXERCISES: [
+                "Crunches (Encogimientos)",
+                "Abdominales Bicicleta",
+                "Elevación de piernas",
+                "Plancha Lateral (Lado 1 y 2 - 22s c/u)",
+                "Descanso de Recuperación",
+            ]
+        };
+
+        // --- ESTADO GLOBAL DE LA APP ---
+        let state = {
+            isRunning: false,
+            isPaused: false,
+            interval: null,
+            timer: 0, // Segundos restantes
+            currentPhase: 'SELECTION', // WARMUP, MAIN_CIRCUIT, COOLDOWN, FINISHED
+            currentRoutineKey: '', // A, B, CORE
+            currentRoutineExercises: [],
+            currentStepIndex: -1, // Índice dentro de la lista de la fase actual
+            currentRound: 0, // Rondas para el MAIN_CIRCUIT (1 a 4)
+            totalSteps: 0,
+        };
+
+        // --- ELEMENTOS DEL DOM ---
+        const $selectionScreen = document.getElementById('selection-screen');
+        const $timerScreen = document.getElementById('timer-screen');
+        const $phaseTitle = document.getElementById('phase-title');
+        const $roundInfo = document.getElementById('round-info');
+        const $exerciseName = document.getElementById('exercise-name');
+        const $timerBox = document.getElementById('timer-box');
+        const $pauseButton = document.getElementById('pause-button');
+        const $resumeModal = document.getElementById('resume-modal');
+        const $modalMessage = document.getElementById('modal-message');
+        const $resumeButton = document.getElementById('resume-button');
+        const $historyList = document.getElementById('history-list');
+        const $userIdDisplay = document.getElementById('user-id');
+        const $loadingSpinner = document.getElementById('loading-spinner');
+        const $workoutButtons = document.getElementById('workout-buttons');
+        const $detailsLink = document.getElementById('details-link');
+
+
+        // --- AUDIO PARA SEÑALES ---
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioContext = new AudioContext();
+
+        function beep(frequency, duration, volume = 0.5) {
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                gainNode.gain.value = volume;
+                oscillator.frequency.value = frequency;
+                oscillator.type = 'sine';
+
+                oscillator.start();
+                setTimeout(() => {
+                    oscillator.stop();
+                }, duration);
+            } catch (e) {
+                console.error("Error al reproducir audio:", e);
+            }
+        }
+        
+        // Función para generar la estructura completa del circuito
+        function createCircuitSteps(exercises, workTime, restTime) {
+            const steps = [];
+            for (let r = 0; r < ROUNDS; r++) {
+                for (let i = 0; i < exercises.length; i++) {
+                    // Paso de TRABAJO
+                    steps.push({
+                        name: exercises[i],
+                        duration: workTime,
+                        isRest: false,
+                        style: 'work-color',
+                        isRoundEnd: (i === exercises.length - 1)
+                    });
+                    
+                    // Paso de DESCANSO (solo si no es el último ejercicio del último round)
+                    if (!(r === ROUNDS - 1 && i === exercises.length - 1)) {
+                        steps.push({
+                            name: (i === exercises.length - 1) ? `DESCANSO GRANDE (Fin Ronda ${r + 1})` : `DESCANSO (Próximo: ${exercises[i+1] || exercises[0]})`,
+                            duration: restTime,
+                            isRest: true,
+                            style: 'rest-color',
+                        });
+                    }
+                }
+            }
+            // Eliminar el último paso de descanso si existe, porque el Cooldown viene después.
+            if (steps.length > 0 && steps[steps.length - 1].isRest) {
+                 steps.pop();
+            }
+
+            return steps;
+        }
+
+        // Función auxiliar para construir el array de ejercicios de la rutina completa
+        function buildRoutine(key) {
+            let mainExercises;
+            switch (key) {
+                case 'A':
+                    mainExercises = WORKOUT_STRUCTURE.CIRCUITO_A_EXERCISES;
+                    break;
+                case 'B':
+                    mainExercises = WORKOUT_STRUCTURE.CIRCUITO_B_EXERCISES;
+                    break;
+                case 'CORE':
+                    mainExercises = WORKOUT_STRUCTURE.CORE_EXERCISES;
+                    break;
+                default:
+                    return [];
+            }
+            
+            const mainCircuitSteps = createCircuitSteps(mainExercises, key === 'CORE' ? CORE_WORK_TIME : WORK_TIME, key === 'CORE' ? CORE_REST_TIME : REST_TIME);
+
+            return [
+                ...WORKOUT_STRUCTURE.WARMUP.map(e => ({...e, phase: 'CALENTAMIENTO'})),
+                ...mainCircuitSteps.map(e => ({...e, phase: 'CIRCUITO PRINCIPAL'})),
+                ...WORKOUT_STRUCTURE.COOLDOWN.map(e => ({...e, phase: 'ENFRIAMIENTO'})),
+            ];
+        }
+
+
+        window.startWorkout = function(key, savedProgress = null) {
+            if (state.isRunning) return;
+            
+            // 1. Ocultar selección y mostrar temporizador
+            $selectionScreen.classList.add('hidden');
+            $timerScreen.classList.remove('hidden');
+
+            state.currentRoutineKey = key;
+            state.isRunning = true;
+            
+            // 2. Construir la rutina completa
+            state.currentRoutineExercises = buildRoutine(key);
+            state.totalSteps = state.currentRoutineExercises.length;
+            
+            if (savedProgress) {
+                // REANUDAR: Usar el progreso cargado
+                state.currentPhase = savedProgress.currentPhase;
+                state.currentRound = savedProgress.currentRound;
+                state.currentStepIndex = savedProgress.currentStepIndex;
+                state.timer = savedProgress.timer;
+
+                // Si el tiempo es 0, avanzamos un paso (para empezar el siguiente ejercicio/descanso)
+                if (state.timer <= 0) {
+                    state.currentStepIndex++;
+                }
+
+            } else {
+                // NUEVA: Iniciar desde el primer paso
+                state.currentPhase = 'WARMUP';
+                state.currentStepIndex = -1;
+                state.currentRound = 0;
+            }
+            
+            // 3. Iniciar la secuencia desde el paso actual
+            nextStep(true); // El flag 'true' es para indicar que es el primer 'nextStep'
+        }
+        
+        // --- FUNCIÓN PARA GUARDAR EL PROGRESO (FIREBASE + JSON RESPALDO) ---
+        async function saveProgress(source = 'auto') {
+            if (!state.isRunning || state.currentPhase === 'FINISHED') {
+                console.log(`Guardado omitido (IsRunning: ${state.isRunning}, Phase: ${state.currentPhase})`);
+                return;
+            }
+
+            const progressData = {
+                currentStepIndex: state.currentStepIndex,
+                currentRoutineKey: state.currentRoutineKey,
+                currentPhase: state.currentPhase,
+                currentRound: state.currentRound,
+                timer: state.timer,
+                timestamp: new Date().toISOString(),
+                source: source
+            };
+
+            // Si Firebase está disponible, usar Firebase
+            if (isAuthReady) {
+                try {
+                    const progressDocRef = doc(db, `artifacts/${appId}/users/${userId}/workout_progress`, 'status');
+                    await setDoc(progressDocRef, progressData);
+                    console.log("Progreso guardado en Firestore.");
+                } catch (e) {
+                    console.error("Error guardando en Firestore:", e);
+                    // Fallback a JSON si Firebase falla
+                    saveProgressToJSON(progressData, source);
+                }
+            } else {
+                // Usar sistema JSON local si Firebase no está disponible
+                saveProgressToJSON(progressData, source);
+            }
+        }
+
+        // --- FUNCIONES DEL SISTEMA JSON FÍSICO ---
+        async function saveProgressToJSON(progressData, source = 'auto') {
+            try {
+                // Guardar en localStorage (respaldo inmediato)
+                localStorage.setItem('workout_progress', JSON.stringify(progressData));
+                updateLocalJSONStorage('progress', progressData);
+                
+                // Guardar en archivo físico en el servidor
+                await saveToPhysicalFile('saveProgress', progressData);
+                
+                if (source === 'manual') {
+                    document.getElementById('progress-info').textContent = '¡Progreso guardado en archivo físico!';
+                    setTimeout(() => {
+                        document.getElementById('progress-info').textContent = 'Selecciona una rutina para empezar.';
+                    }, 3000);
+                }
+                
+                console.log("✅ Progreso guardado en sistema JSON físico y local.");
+            } catch (e) {
+                console.error("❌ Error guardando progreso:", e);
+                // Si falla el archivo físico, al menos queda en localStorage
+                console.log("⚠️ Progreso guardado solo en localStorage como respaldo.");
+            }
+        }
+
+        // Función para comunicarse con el backend PHP
+        async function saveToPhysicalFile(action, data) {
+            try {
+                const response = await fetch('./api/data_handler.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userId: userId,
+                        action: action,
+                        data: data
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    console.log(`✅ ${action} guardado en archivo físico:`, result.file || '');
+                    return result;
+                } else {
+                    throw new Error(result.message);
+                }
+                
+            } catch (e) {
+                console.error(`❌ Error en ${action}:`, e);
+                throw e;
+            }
+        }
+
+        // Función para cargar desde archivo físico
+        async function loadFromPhysicalFile(action) {
+            try {
+                const response = await fetch('./api/data_handler.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        userId: userId,
+                        action: action
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    console.log(`✅ ${action} cargado desde archivo físico`);
+                    return result.data;
+                } else {
+                    console.log(`⚠️ No se pudo cargar ${action} desde archivo físico:`, result.message);
+                    return null;
+                }
+                
+            } catch (e) {
+                console.error(`❌ Error cargando ${action}:`, e);
+                return null;
+            }
+        }
+
+        function updateLocalJSONStorage(type, data) {
+            try {
+                let storage = JSON.parse(localStorage.getItem('workout_data') || '{}');
+                
+                if (!storage[type]) {
+                    storage[type] = {};
+                }
+                
+                if (type === 'progress') {
+                    storage[type] = data;
+                } else if (type === 'history') {
+                    Object.assign(storage[type], data);
+                }
+                
+                storage.lastUpdated = new Date().toISOString();
+                storage.userId = userId;
+                
+                localStorage.setItem('workout_data', JSON.stringify(storage, null, 2));
+                console.log(`Sistema JSON local actualizado: ${type}`);
+                
+            } catch (e) {
+                console.error("Error actualizando sistema JSON:", e);
+            }
+        }
+        
+        // --- FUNCIÓN PARA REGISTRAR LA RUTINA COMPLETA (FIREBASE + JSON) ---
+        async function logCompletedWorkout(routineKey) {
+            const todayId = new Date().toISOString().split('T')[0];
+            const now = new Date().toISOString();
+
+            const historyData = {
+                routine: routineKey,
+                timestamp: now,
+            };
+
+            // Si Firebase está disponible, usar Firebase
+            if (isAuthReady) {
+                try {
+                    console.log("--- Guardando en Firebase ---");
+                    console.log(`Ruta: artifacts/${appId}/users/${userId}/workout_history/${todayId}`);
+                    console.log(JSON.stringify(historyData, null, 2));
+                    
+                    const historyDocRef = doc(db, `artifacts/${appId}/users/${userId}/workout_history`, todayId);
+                    await setDoc(historyDocRef, historyData);
+                    
+                    console.log(`Rutina ${routineKey} registrada en Firebase para ${todayId}.`);
+                    loadHistory();
+                    
+                } catch (e) {
+                    console.error("Error guardando en Firebase:", e);
+                    // Fallback a JSON si Firebase falla
+                    logCompletedWorkoutToJSON(routineKey, historyData, todayId);
+                }
+            } else {
+                // Usar sistema JSON local si Firebase no está disponible
+                logCompletedWorkoutToJSON(routineKey, historyData, todayId);
+            }
+        }
+
+        async function logCompletedWorkoutToJSON(routineKey, historyData, todayId) {
+            console.log("--- Guardando en sistema JSON físico ---");
+            console.log(JSON.stringify(historyData, null, 2));
+            
+            try {
+                // Guardar en localStorage (respaldo inmediato)
+                updateLocalJSONStorage('history', { [todayId]: historyData });
+                
+                // Guardar en archivo físico en el servidor
+                await saveToPhysicalFile('saveWorkout', historyData);
+                
+                console.log(`✅ Rutina ${routineKey} registrada en archivo físico para ${todayId}.`);
+                
+            } catch (e) {
+                console.error("❌ Error guardando rutina en archivo físico:", e);
+                console.log("⚠️ Rutina guardada solo en localStorage como respaldo.");
+            }
+            
+            // Actualizar la lista de historial
+            loadHistoryFromJSON();
+        }
+        
+        // --- FUNCIÓN PARA CARGAR EL PROGRESO (FIREBASE + JSON) ---
+        async function loadProgress() {
+            // Si Firebase está disponible, intentar cargar desde Firebase
+            if (isAuthReady) {
+                try {
+                    const progressDocRef = doc(db, `artifacts/${appId}/users/${userId}/workout_progress`, 'status');
+                    const docSnap = await getDoc(progressDocRef);
+
+                    if (docSnap.exists() && docSnap.data().currentStepIndex > -1) {
+                        const savedProgress = docSnap.data();
+                        showResumeModal(savedProgress, 'Firebase');
+                        return;
+                    } else {
+                        console.log("No se encontró progreso en Firebase.");
+                    }
+                } catch (e) {
+                    console.error("Error cargando progreso de Firebase:", e);
+                }
+            }
+            
+            // Fallback o modo JSON: cargar desde localStorage/JSON
+            loadProgressFromJSON();
+        }
+
+        async function loadProgressFromJSON() {
+            try {
+                // Intentar cargar desde archivo físico primero
+                const physicalData = await loadFromPhysicalFile('loadProgress');
+                if (physicalData && physicalData.currentStepIndex > -1) {
+                    showResumeModal(physicalData, 'Archivo Físico');
+                    return;
+                }
+
+                // Fallback: cargar desde localStorage
+                const savedData = localStorage.getItem('workout_progress');
+                if (savedData) {
+                    const savedProgress = JSON.parse(savedData);
+                    
+                    if (savedProgress.currentStepIndex > -1) {
+                        showResumeModal(savedProgress, 'JSON Local (Respaldo)');
+                        return;
+                    }
+                }
+
+                // Último fallback: desde workout_data
+                const workoutData = JSON.parse(localStorage.getItem('workout_data') || '{}');
+                if (workoutData.progress && workoutData.progress.currentStepIndex > -1) {
+                    showResumeModal(workoutData.progress, 'Sistema JSON (Respaldo)');
+                    return;
+                }
+
+                console.log("No se encontró progreso guardado.");
+                
+            } catch (e) {
+                console.error("Error cargando progreso:", e);
+            }
+        }
+
+        function showResumeModal(savedProgress, source) {
+            $modalMessage.textContent = `Se encontró progreso (${source}) para el circuito ${savedProgress.currentRoutineKey} en la fase "${savedProgress.currentPhase}". ¿Deseas reanudar?`;
+            
+            $resumeButton.onclick = () => {
+                $resumeModal.classList.add('hidden');
+                startWorkout(savedProgress.currentRoutineKey, savedProgress);
+            };
+            
+            $resumeModal.classList.remove('hidden');
+        }
+
+        // --- FUNCIÓN PARA CARGAR EL HISTORIAL (FIREBASE + JSON) ---
+        async function loadHistory() {
+            $historyList.innerHTML = '<p class="text-gray-400" id="loading-history">Cargando historial...</p>';
+
+            // Si Firebase está disponible, intentar cargar desde Firebase
+            if (isAuthReady) {
+                try {
+                    const historyColRef = collection(db, `artifacts/${appId}/users/${userId}/workout_history`);
+                    const querySnapshot = await getDocs(historyColRef);
+                    
+                    let historyItems = [];
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        historyItems.push({ 
+                            date: doc.id, 
+                            routine: data.routine,
+                            timestamp: data.timestamp
+                        });
+                    });
+                    
+                    if (historyItems.length > 0) {
+                        displayHistory(historyItems, 'Firebase');
+                        return;
+                    } else {
+                        console.log("No se encontró historial en Firebase.");
+                    }
+                } catch (e) {
+                    console.error("Error cargando historial de Firebase:", e);
+                }
+            }
+            
+            // Fallback o modo JSON: cargar desde sistema JSON local
+            loadHistoryFromJSON();
+        }
+
+        async function loadHistoryFromJSON() {
+            try {
+                // Intentar cargar desde archivo físico primero
+                const physicalData = await loadFromPhysicalFile('loadHistory');
+                if (physicalData && Object.keys(physicalData).length > 0) {
+                    let historyItems = [];
+                    
+                    Object.entries(physicalData).forEach(([date, data]) => {
+                        historyItems.push({ 
+                            date: date, 
+                            routine: data.routine,
+                            timestamp: data.timestamp
+                        });
+                    });
+                    
+                    displayHistory(historyItems, 'Archivo Físico');
+                    return;
+                }
+
+                // Fallback: cargar desde localStorage
+                const workoutData = JSON.parse(localStorage.getItem('workout_data') || '{}');
+                
+                if (workoutData.history && Object.keys(workoutData.history).length > 0) {
+                    let historyItems = [];
+                    
+                    Object.entries(workoutData.history).forEach(([date, data]) => {
+                        historyItems.push({ 
+                            date: date, 
+                            routine: data.routine,
+                            timestamp: data.timestamp
+                        });
+                    });
+                    
+                    displayHistory(historyItems, 'JSON Local (Respaldo)');
+                } else {
+                    $historyList.innerHTML = '<p class="text-gray-400">¡Aún no has completado ninguna rutina! ¡Empieza hoy!</p>';
+                }
+                
+            } catch (e) {
+                console.error("Error cargando historial:", e);
+                $historyList.innerHTML = '<p class="text-yellow-400">Error cargando historial.</p>';
+            }
+        }
+
+        function displayHistory(historyItems, source) {
+            // Ordenar por fecha (más reciente primero)
+            historyItems.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+            $historyList.innerHTML = '';
+            
+            if (historyItems.length === 0) {
+                $historyList.innerHTML = '<p class="text-gray-400">¡Aún no has completado ninguna rutina! ¡Empieza hoy!</p>';
+            } else {
+                // Agregar indicador de fuente
+                $historyList.innerHTML = `<p class="text-xs text-gray-500 mb-2">Fuente: ${source}</p>`;
+                
+                historyItems.forEach(item => {
+                    const dateObj = new Date(item.timestamp);
+                    const formattedDate = dateObj.toLocaleDateString('es-ES', { 
+                        year: 'numeric', month: 'long', day: 'numeric' 
+                    });
+                    
+                    const element = `
+                        <div class="flex justify-between items-center p-3 bg-gray-700 rounded-lg shadow-md">
+                            <span class="text-gray-300 font-medium">${formattedDate}</span>
+                            <span class="px-3 py-1 text-sm font-bold rounded-full ${item.routine === 'CORE' ? 'bg-blue-400 text-blue-900' : 'bg-primary text-gray-900'}">
+                                ${item.routine}
+                            </span>
+                        </div>
+                    `;
+                    $historyList.innerHTML += element;
+                });
+            }
+        }
+        
+        window.continueWithoutResume = function() {
+            $resumeModal.classList.add('hidden');
+        }
+
+        // --- FUNCIÓN PARA VOLVER AL EJERCICIO ANTERIOR ---
+        window.goBack = function() {
+            if (!state.isRunning || state.currentStepIndex <= 0) return;
+
+            clearInterval(state.interval);
+            state.isPaused = false;
+            
+            state.currentStepIndex -= 2;
+
+            if (state.currentStepIndex < 0) {
+                state.currentStepIndex = 0; 
+            }
+            
+            nextStep(true);
+        }
+
+        window.nextStep = function(isNavigation = false) {
+            clearInterval(state.interval);
+
+            if (!isNavigation) {
+                state.currentStepIndex++;
+            }
+            
+            if (state.isPaused) {
+                state.isPaused = false;
+                $pauseButton.textContent = 'PAUSAR';
+                $timerBox.classList.remove('text-gray-500');
+            }
+            
+            // 1. COMPROBAR FIN DE ENTRENAMIENTO
+            if (state.currentStepIndex >= state.totalSteps) {
+                // Registrar el día como completado antes de finalizar
+                logCompletedWorkout(state.currentRoutineKey);
+                finishWorkout();
+                clearSavedProgress();
+                return;
+            }
+
+            // 2. OBTENER PASO ACTUAL
+            const currentStep = state.currentRoutineExercises[state.currentStepIndex];
+
+            if (isNavigation || state.timer <= 0) {
+                state.timer = currentStep.duration;
+            }
+
+            // 3. ACTUALIZAR FASE y RONDAS
+            state.currentPhase = currentStep.phase;
+
+            if (currentStep.phase === 'CIRCUITO PRINCIPAL') {
+                const exercisesPerRound = WORKOUT_STRUCTURE.CIRCUITO_A_EXERCISES.length;
+                let workStepsCompleted = 0;
+                
+                for(let i = WORKOUT_STRUCTURE.WARMUP.length; i <= state.currentStepIndex; i++) {
+                     if (state.currentRoutineExercises[i] && state.currentRoutineExercises[i].phase === 'CIRCUITO PRINCIPAL' && !state.currentRoutineExercises[i].isRest) {
+                        workStepsCompleted++;
+                    }
+                }
+                
+                state.currentRound = Math.ceil(workStepsCompleted / exercisesPerRound);
+                if (state.currentRound < 1) state.currentRound = 1;
+
+            } else if (currentStep.phase === 'WARMUP' || currentStep.phase === 'ENFRIAMIENTO') {
+                state.currentRound = 0;
+            }
+
+
+            // 4. ACTUALIZAR PANTALLA
+            updateDisplay(currentStep);
+            
+            // 5. GUARDAR PROGRESO (Automático)
+            saveProgress('auto');
+            
+            // 6. INICIAR TEMPORIZADOR
+            if (!state.isPaused) {
+                if (!currentStep.isRest) {
+                    beep(880, 200, 0.7);
+                } else {
+                    beep(440, 100, 0.5);
+                }
+                state.interval = setInterval(tick, 1000);
+            }
+        }
+        
+        window.saveProgress = saveProgress;
+        
+        async function clearSavedProgress() {
+             // Limpiar progreso de archivo físico primero
+             try {
+                 await saveToPhysicalFile('clearProgress', {});
+                 console.log("✅ Progreso eliminado del archivo físico.");
+             } catch (e) {
+                 console.error("❌ Error limpiando progreso físico:", e);
+             }
+
+             // Limpiar progreso del sistema JSON local
+             try {
+                 localStorage.removeItem('workout_progress');
+                 
+                 // También limpiar el progreso del almacenamiento JSON completo
+                 let storage = JSON.parse(localStorage.getItem('workout_data') || '{}');
+                 if (storage.progress) {
+                     delete storage.progress;
+                     localStorage.setItem('workout_data', JSON.stringify(storage, null, 2));
+                 }
+                 
+                 console.log("✅ Progreso eliminado del sistema JSON local.");
+             } catch (e) {
+                 console.error("❌ Error limpiando progreso JSON:", e);
+             }
+
+             // Si Firebase está disponible, también limpiar allí
+             if (isAuthReady) {
+                 try {
+                    const progressDocRef = doc(db, `artifacts/${appId}/users/${userId}/workout_progress`, 'status');
+                    await setDoc(progressDocRef, { currentStepIndex: -1, currentRoutineKey: '', currentPhase: 'FINISHED' }, { merge: true });
+                    console.log("✅ Progreso eliminado de Firebase.");
+                 } catch (e) {
+                    console.error("❌ Error limpiando progreso Firebase:", e);
+                 }
+             }
+        }
+
+        function tick() {
+            if (state.isPaused) return;
+
+            state.timer--;
+            
+            // 1. MANEJO DE SONIDOS DE ALERTA
+            if (state.timer > 0 && state.timer <= 3) {
+                beep(600, 100, 0.8);
+            } else if (state.timer === 0) {
+                beep(1200, 400, 1.0);
+            }
+
+            // 2. ACTUALIZACIÓN DE PANTALLA
+            const currentStep = state.currentRoutineExercises[state.currentStepIndex];
+            updateDisplay(currentStep);
+
+            // 3. CAMBIO DE PASO
+            if (state.timer <= 0) {
+                state.currentStepIndex++;
+                nextStep(true); 
+            }
+        }
+
+        function updateDisplay(step) {
+            const minutes = Math.floor(state.timer / 60).toString().padStart(2, '0');
+            const seconds = (state.timer % 60).toString().padStart(2, '0');
+            $timerBox.textContent = `${minutes}:${seconds}`;
+
+            $phaseTitle.textContent = step.phase;
+            $phaseTitle.className = `text-xl font-medium uppercase tracking-widest ${step.style || 'ready-color'}`;
+            
+            const exerciseName = step.name;
+            $exerciseName.textContent = exerciseName;
+            $timerBox.className = `timer-display mb-8 ${step.style || 'ready-color'}`;
+
+            // --- Lógica del botón de Búsqueda de Detalles (NUEVO) ---
+            if (step.phase === 'CIRCUITO PRINCIPAL' && !step.isRest) {
+                // Generar URL de búsqueda de Google Videos + Técnica
+                // Usamos `tbm=vid` para buscar videos de YouTube/Google sobre técnica
+                const searchQuery = encodeURIComponent(`${exerciseName} técnica video`);
+                $detailsLink.href = `https://www.google.com/search?tbm=vid&q=${searchQuery}`;
+                $detailsLink.classList.remove('hidden');
+            } else {
+                // Ocultar el botón si es calentamiento, enfriamiento o descanso
+                $detailsLink.classList.add('hidden');
+            }
+            // --------------------------------------------------------
+
+            let progressText = `Paso ${state.currentStepIndex + 1} de ${state.totalSteps}.`;
+            if (state.currentPhase === 'CIRCUITO PRINCIPAL' && state.currentRound > 0) {
+                const totalExercises = WORKOUT_STRUCTURE.CIRCUITO_A_EXERCISES.length;
+                
+                const mainCircuitStepsStart = WORKOUT_STRUCTURE.WARMUP.length;
+                let stepInCircuit = state.currentStepIndex - mainCircuitStepsStart;
+                
+                let exerciseNumber;
+                
+                if (step.isRest) {
+                    stepInCircuit = state.currentStepIndex - mainCircuitStepsStart - 1;
+                    exerciseNumber = ((Math.floor(stepInCircuit / 2)) % totalExercises) + 1;
+                } else {
+                    exerciseNumber = ((Math.floor(stepInCircuit / 2)) % totalExercises) + 1;
+                }
+                
+                progressText = `Ronda ${state.currentRound} de ${ROUNDS} | Ejercicio ${exerciseNumber} de ${totalExercises}`;
+
+            } else if (state.currentPhase === 'WARMUP' || state.currentPhase === 'ENFRIAMIENTO') {
+                const totalInPhase = WORKOUT_STRUCTURE[state.currentPhase.replace(' ', '_').toUpperCase()].length;
+                let phaseStep;
+
+                if (state.currentPhase === 'WARMUP') {
+                    phaseStep = state.currentStepIndex + 1;
+                } else {
+                    const cooldownStart = state.totalSteps - WORKOUT_STRUCTURE.COOLDOWN.length;
+                    phaseStep = state.currentStepIndex - cooldownStart + 1;
+                }
+                progressText = `Paso ${phaseStep} de ${totalInPhase}`;
+            }
+            
+            $roundInfo.textContent = progressText;
+
+            $pauseButton.textContent = state.isPaused ? 'REANUDAR' : 'PAUSAR';
+        }
+
+        window.togglePause = function() {
+            state.isPaused = !state.isPaused;
+            if (state.isPaused) {
+                clearInterval(state.interval);
+                $timerBox.classList.add('text-gray-500');
+                saveProgress('pause'); 
+            } else {
+                state.interval = setInterval(tick, 1000);
+                $timerBox.classList.remove('text-gray-500');
+            }
+            $pauseButton.textContent = state.isPaused ? 'REANUDAR' : 'PAUSAR';
+        }
+
+        function finishWorkout() {
+            clearInterval(state.interval);
+            state.isRunning = false;
+            state.currentPhase = 'FINISHED';
+
+            $phaseTitle.textContent = '¡RUTINA COMPLETA!';
+            $exerciseName.textContent = '¡FELICITACIONES! Vuelve pronto.';
+            $timerBox.textContent = '00:00';
+            $timerBox.className = 'timer-display mb-8 finished-color';
+            $roundInfo.textContent = `Rutina ${state.currentRoutineKey} terminada.`;
+
+            $pauseButton.classList.add('hidden');
+        }
+        
+        window.resetWorkout = function() {
+            clearInterval(state.interval);
+            clearSavedProgress();
+            state = {
+                isRunning: false,
+                isPaused: false,
+                interval: null,
+                timer: 0, 
+                currentPhase: 'SELECTION', 
+                currentRoutineKey: '', 
+                currentRoutineExercises: [],
+                currentStepIndex: -1, 
+                currentRound: 0, 
+                totalSteps: 0,
+            };
+            
+            $selectionScreen.classList.remove('hidden');
+            $timerScreen.classList.add('hidden'); 
+            $pauseButton.classList.remove('hidden');
+            $pauseButton.textContent = 'PAUSAR';
+            
+            document.getElementById('progress-info').textContent = 'Selecciona una rutina para empezar.';
+        }
+        
+        // --- INICIALIZACIÓN DE FIREBASE Y AUTH ---
+        async function initApp() {
+            // setLogLevel('debug'); 
+
+            // Diagnóstico de variables de entorno
+            console.log("=== DIAGNÓSTICO DE FIREBASE ===");
+            console.log("¿__app_id definido?", typeof __app_id !== 'undefined');
+            console.log("¿__firebase_config definido?", typeof __firebase_config !== 'undefined');
+            console.log("¿__initial_auth_token definido?", typeof __initial_auth_token !== 'undefined');
+            console.log("appId:", appId);
+            console.log("firebaseConfig:", firebaseConfig);
+            console.log("initialAuthToken:", initialAuthToken ? "Definido" : "No definido");
+            console.log("==============================");
+
+            // Verificar si la configuración de Firebase está vacía
+            if (Object.keys(firebaseConfig).length === 0) {
+                 console.error("Firebase Config está vacío. El historial y el guardado de progreso no funcionarán.");
+                 console.warn("SOLUCIÓN: Este es un entorno local. La app funcionará sin persistencia.");
+                 $loadingSpinner.innerHTML = '<p class="text-yellow-400 font-semibold">Modo local: Sin conexión a Firebase</p>';
+                 $workoutButtons.classList.remove('hidden');
+                 isAuthReady = false; // Auth siempre falla si no hay config
+                 document.getElementById('loading-history').textContent = 'Historial no disponible en modo local.';
+                 $userIdDisplay.textContent = 'Usuario local (sin persistencia)';
+                 return; // Salir de la función de inicialización de Firebase
+            }
+
+            try {
+                console.log("Iniciando conexión a Firebase...");
+                app = initializeApp(firebaseConfig);
+                console.log("✓ App Firebase inicializada");
+                
+                auth = getAuth(app);
+                console.log("✓ Auth Firebase inicializado");
+                
+                db = getFirestore(app);
+                console.log("✓ Firestore inicializado");
+
+                if (initialAuthToken) {
+                    console.log("Autenticando con token personalizado...");
+                    await signInWithCustomToken(auth, initialAuthToken);
+                    console.log("✓ Autenticación con token exitosa");
+                } else {
+                    console.log("Autenticando anónimamente...");
+                    await signInAnonymously(auth);
+                    console.log("✓ Autenticación anónima exitosa");
+                }
+
+                userId = auth.currentUser?.uid || crypto.randomUUID();
+                isAuthReady = true;
+                
+                $userIdDisplay.textContent = userId;
+                console.log(`✓ Usuario autenticado con ID: ${userId}`);
+
+                // Ocultar spinner y mostrar botones SOLO después de que isAuthReady es TRUE
+                $loadingSpinner.classList.add('hidden');
+                $workoutButtons.classList.remove('hidden');
+
+
+                // 1. Cargar el historial de rutinas completadas
+                loadHistory();
+
+                // 2. Cargar el progreso de la rutina actual
+                loadProgress();
+
+            } catch (error) {
+                console.error("=== ERROR DE FIREBASE ===");
+                console.error("Tipo de error:", error.name);
+                console.error("Mensaje:", error.message);
+                console.error("Código:", error.code || "N/A");
+                console.error("Error completo:", error);
+                console.error("========================");
+                
+                let errorMessage = 'Error de conexión Firebase';
+                
+                // Identificar tipo específico de error
+                if (error.code) {
+                    switch (error.code) {
+                        case 'auth/network-request-failed':
+                            errorMessage = 'Sin conexión a internet';
+                            break;
+                        case 'auth/api-key-not-valid':
+                            errorMessage = 'Clave API de Firebase inválida';
+                            break;
+                        case 'firestore/permission-denied':
+                            errorMessage = 'Permisos de Firestore denegados';
+                            break;
+                        case 'auth/project-not-found':
+                            errorMessage = 'Proyecto Firebase no encontrado';
+                            break;
+                        default:
+                            errorMessage = `Error Firebase: ${error.code}`;
+                    }
+                } else if (error.message.includes('fetch')) {
+                    errorMessage = 'Error de red - Verifica tu conexión';
+                } else if (error.message.includes('API key')) {
+                    errorMessage = 'Clave API Firebase incorrecta';
+                }
+                
+                $loadingSpinner.innerHTML = `<p class="text-red-400 font-semibold">${errorMessage}</p>`;
+                $workoutButtons.classList.remove('hidden');
+                document.getElementById('loading-history').textContent = `Error: ${errorMessage}`;
+                $userIdDisplay.textContent = 'Error de autenticación';
+            }
+        }
+
+        // --- FUNCIONES DE GESTIÓN DE DATOS JSON ---
+        
+        // Función para descargar datos como archivo JSON
+        window.downloadDataAsJSON = async function() {
+            try {
+                let data = {};
+                
+                // Intentar obtener datos desde archivos físicos primero
+                try {
+                    const physicalData = await loadFromPhysicalFile('getAllData');
+                    if (physicalData) {
+                        data = physicalData;
+                        console.log("✅ Datos obtenidos desde archivos físicos para descarga");
+                    }
+                } catch (e) {
+                    console.log("⚠️ No se pudieron obtener datos físicos, usando localStorage");
+                }
+                
+                // Fallback: usar datos de localStorage si no hay físicos
+                if (!data.history && !data.progress) {
+                    data = JSON.parse(localStorage.getItem('workout_data') || '{}');
+                    console.log("⚠️ Usando datos de localStorage para descarga");
+                }
+                
+                // Agregar metadatos de exportación
+                data.exportDate = new Date().toISOString();
+                data.appVersion = "1.0.0";
+                data.exportedBy = userId;
+                data.source = data.history || data.progress ? "Archivo Físico" : "localStorage";
+                
+                const jsonString = JSON.stringify(data, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `workout-data-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                console.log("✅ Datos descargados como JSON desde:", data.source);
+                alert(`¡Datos descargados exitosamente!\nFuente: ${data.source}`);
+                
+            } catch (e) {
+                console.error("❌ Error descargando datos:", e);
+                alert("Error al descargar datos: " + e.message);
+            }
+        }
+
+        // Función para manejar la importación de archivos JSON
+        window.handleJSONImport = async function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            try {
+                const data = await importDataFromJSON(file);
+                
+                // Actualizar interfaz
+                loadHistory();
+                loadProgress();
+                
+                alert(`¡Datos importados exitosamente!\n\nHistorial: ${Object.keys(data.history || {}).length} entradas\nProgreso: ${data.progress ? 'Disponible' : 'No disponible'}`);
+                
+                // Limpiar el input
+                event.target.value = '';
+                
+            } catch (e) {
+                alert("Error importando archivo: " + e.message);
+            }
+        }
+
+        // Función para importar datos desde archivo JSON
+        function importDataFromJSON(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const data = JSON.parse(e.target.result);
+                        
+                        // Validar estructura del archivo
+                        if (!data.exportDate && !data.history && !data.progress) {
+                            throw new Error("Formato de archivo inválido. Debe ser un archivo de datos de entrenamiento.");
+                        }
+                        
+                        // Guardar en localStorage
+                        localStorage.setItem('workout_data', JSON.stringify(data, null, 2));
+                        
+                        // Si hay progreso, también guardarlo separadamente
+                        if (data.progress) {
+                            localStorage.setItem('workout_progress', JSON.stringify(data.progress));
+                        }
+                        
+                        console.log("✅ Datos importados exitosamente:", data);
+                        resolve(data);
+                        
+                    } catch (error) {
+                        console.error("❌ Error importando datos:", error);
+                        reject(error);
+                    }
+                };
+                reader.readAsText(file);
+            });
+        }
+
+        // Función para limpiar todos los datos locales
+        window.clearAllData = function() {
+            if (confirm("⚠️ ¿Estás seguro de que quieres eliminar TODOS los datos locales?\n\nEsto incluye:\n- Historial de entrenamientos\n- Progreso guardado\n- Toda la información almacenada\n\nEsta acción NO se puede deshacer.")) {
+                try {
+                    localStorage.removeItem('workout_data');
+                    localStorage.removeItem('workout_progress');
+                    
+                    // Actualizar interfaz
+                    $historyList.innerHTML = '<p class="text-gray-400">¡Aún no has completado ninguna rutina! ¡Empieza hoy!</p>';
+                    
+                    console.log("✅ Todos los datos locales han sido eliminados");
+                    alert("✅ Datos eliminados exitosamente.");
+                    
+                } catch (e) {
+                    console.error("❌ Error eliminando datos:", e);
+                    alert("Error eliminando datos: " + e.message);
+                }
+            }
+        }
+
+        // --- FUNCIÓN DE PRUEBA DE CONECTIVIDAD ---
+        window.testFirebaseConnection = async function() {
+            console.log("=== PRUEBA DE CONECTIVIDAD FIREBASE ===");
+            
+            const testResults = [];
+            
+            // 1. Verificar configuración
+            testResults.push(`✅ Config cargada: ${Object.keys(firebaseConfig).length > 0 ? 'Sí' : 'No'}`);
+            testResults.push(`✅ App ID: ${appId}`);
+            testResults.push(`✅ Auth Ready: ${isAuthReady}`);
+            testResults.push(`✅ User ID: ${userId}`);
+            
+            // 2. Verificar datos locales
+            const localData = localStorage.getItem('workout_data');
+            const progressData = localStorage.getItem('workout_progress');
+            testResults.push(`✅ Datos JSON locales: ${localData ? 'Disponibles' : 'No disponibles'}`);
+            testResults.push(`✅ Progreso local: ${progressData ? 'Disponible' : 'No disponible'}`);
+            
+            // 3. Probar sistema de archivos físicos
+            try {
+                const physicalTest = await fetch('./api/data_handler.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: userId, action: 'loadProgress' })
+                });
+                const physicalResult = await physicalTest.json();
+                testResults.push(`✅ Archivos físicos PHP: ${physicalResult.success ? 'Funcionando' : 'Error'}`);
+                if (!physicalResult.success) {
+                    testResults.push(`   └─ Error: ${physicalResult.message}`);
+                }
+            } catch (e) {
+                testResults.push(`❌ Archivos físicos PHP: No disponible - ${e.message}`);
+            }
+            
+            // 4. Probar conectividad de red
+            try {
+                const networkTest = await fetch('https://www.google.com/favicon.ico', { mode: 'no-cors' });
+                testResults.push(`✅ Conectividad de red: OK`);
+            } catch (e) {
+                testResults.push(`❌ Conectividad de red: FALLA`);
+            }
+            
+            // 5. Probar Firebase si está configurado
+            if (Object.keys(firebaseConfig).length > 0 && isAuthReady) {
+                try {
+                    const testDocRef = doc(db, 'test', 'connectivity');
+                    const testDoc = await getDoc(testDocRef);
+                    testResults.push(`✅ Firestore: Conectado`);
+                } catch (e) {
+                    testResults.push(`❌ Firestore: Error - ${e.code || e.message}`);
+                }
+            } else {
+                testResults.push(`⚠️  Firebase: No configurado`);
+            }
+            
+            // Mostrar resultados
+            const results = testResults.join('\n');
+            console.log(results);
+            alert(`RESULTADOS DE CONECTIVIDAD:\n\n${results}`);
+            console.log("=====================================");
+        }
+
+        window.onload = initApp;
+
+    </script>
+</body>
+</html>

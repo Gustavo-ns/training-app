@@ -527,7 +527,8 @@
         </div>
     </section>
 
-    <!-- Modal de Confirmación de Reanudación de Progreso -->
+    <!-- Modal de Confirmación de Reanudación de Progreso - YA NO SE USA -->
+    <!-- 
     <div id="resume-modal" class="modal-overlay hidden">
         <div class="modal-content text-center">
             <h3 class="text-xl font-bold mb-4 text-white">Progreso Encontrado</h3>
@@ -542,6 +543,7 @@
             </div>
         </div>
     </div>
+    -->
 
     <!-- Modal de Lista de Ejercicios -->
     <div id="exercise-list-modal" class="modal-overlay hidden">
@@ -1599,7 +1601,8 @@
 
                     if (docSnap.exists() && docSnap.data().currentStepIndex > -1) {
                         const savedProgress = docSnap.data();
-                        showResumeModal(savedProgress, 'Firebase');
+                        // Continuar automáticamente donde se quedó
+                        startWorkout(savedProgress.currentRoutineKey, savedProgress);
                         return;
                     } else {
                         console.log("No se encontró progreso en Firebase.");
@@ -1618,7 +1621,8 @@
                 // Intentar cargar desde archivo físico primero
                 const physicalData = await loadFromPhysicalFile('loadProgress');
                 if (physicalData && physicalData.currentStepIndex > -1) {
-                    showResumeModal(physicalData, 'Archivo Físico');
+                    // Continuar automáticamente donde se quedó
+                    startWorkout(physicalData.currentRoutineKey, physicalData);
                     return;
                 }
 
@@ -1628,7 +1632,8 @@
                     const savedProgress = JSON.parse(savedData);
                     
                     if (savedProgress.currentStepIndex > -1) {
-                        showResumeModal(savedProgress, 'JSON Local (Respaldo)');
+                        // Continuar automáticamente donde se quedó
+                        startWorkout(savedProgress.currentRoutineKey, savedProgress);
                         return;
                     }
                 }
@@ -1636,7 +1641,8 @@
                 // Último fallback: desde workout_data
                 const workoutData = JSON.parse(localStorage.getItem('workout_data') || '{}');
                 if (workoutData.progress && workoutData.progress.currentStepIndex > -1) {
-                    showResumeModal(workoutData.progress, 'Sistema JSON (Respaldo)');
+                    // Continuar automáticamente donde se quedó
+                    startWorkout(workoutData.progress.currentRoutineKey, workoutData.progress);
                     return;
                 }
 
@@ -1647,16 +1653,10 @@
             }
         }
 
-        function showResumeModal(savedProgress, source) {
-            $modalMessage.textContent = `Se encontró progreso (${source}) para el circuito ${savedProgress.currentRoutineKey} en la fase "${savedProgress.currentPhase}". ¿Deseas reanudar?`;
-            
-            $resumeButton.onclick = () => {
-                $resumeModal.classList.add('hidden');
-                startWorkout(savedProgress.currentRoutineKey, savedProgress);
-            };
-            
-            $resumeModal.classList.remove('hidden');
-        }
+        // Función de modal comentada - ahora se continúa automáticamente
+        // function showResumeModal(savedProgress, source) {
+        //     // Ya no se usa - el progreso se reanuda automáticamente
+        // }
 
         // --- FUNCIÓN PARA CARGAR EL HISTORIAL (FIREBASE + JSON) ---
         async function loadHistory() {
@@ -1772,9 +1772,10 @@
             }
         }
         
-        window.continueWithoutResume = function() {
-            $resumeModal.classList.add('hidden');
-        }
+        // Función comentada - ya no se usa modal de progreso
+        // window.continueWithoutResume = function() {
+        //     // Ya no se usa
+        // }
 
         // --- FUNCIÓN PARA VOLVER AL EJERCICIO ANTERIOR ---
         window.goBack = function() {
@@ -2218,8 +2219,18 @@
 
         // --- FUNCIONES PARA RUTINA DEL DÍA ---
         function startTodaysWorkout() {
-            const todaysRoutine = getTodaysRoutine();
-            startWorkout(todaysRoutine);
+            // Primero verificar si hay progreso guardado
+            loadProgress();
+            
+            // Si no hay progreso guardado, loadProgress() no hará nada y continuaremos aquí
+            // Si hay progreso, loadProgress() automáticamente llamará startWorkout con el progreso
+            setTimeout(() => {
+                // Solo iniciar nuevo entrenamiento si no se está ejecutando ya (significa que no había progreso guardado)
+                if (!state.isRunning) {
+                    const todaysRoutine = getTodaysRoutine();
+                    startWorkout(todaysRoutine);
+                }
+            }, 100); // Pequeño delay para permitir que loadProgress() termine
         }
 
         function showRoutineSelector() {

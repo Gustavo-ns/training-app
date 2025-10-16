@@ -3,7 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rutina 30 Minutos - Rastreador</title>
+    <title>Entrenamiento HIIT - Rutina 30 Minutos</title>
+    
+    <!-- Meta tags para SEO y PWA -->
+    <meta name="description" content="Tu centro de entrenamiento HIIT completo con rutinas de 30 minutos, seguimiento de progreso y calendario de entrenamientos.">
+    <meta name="keywords" content="HIIT, entrenamiento, fitness, rutinas, ejercicio, salud">
+    <meta name="author" content="HIIT Trainer App">
+    <meta name="theme-color" content="#f97316">
+    <meta name="application-name" content="HIIT Trainer">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+    
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="HIIT Trainer">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Meta tags adicionales para PWA -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    
+    <!-- Open Graph para redes sociales -->
+    <meta property="og:title" content="Entrenamiento HIIT - Rutina 30 Minutos">
+    <meta property="og:description" content="Tu centro de entrenamiento HIIT completo con rutinas de 30 minutos, seguimiento de progreso y calendario de entrenamientos.">
+    <meta property="og:image" content="icon-512.png">
+    <meta property="og:url" content="">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Entrenamiento HIIT - Rutina 30 Minutos">
+    <meta name="twitter:description" content="Tu centro de entrenamiento HIIT completo con rutinas de 30 minutos, seguimiento de progreso y calendario de entrenamientos.">
+    <meta name="twitter:image" content="icon-512.png">
+    
     <!-- Carga de Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js para gráficos -->
@@ -242,19 +281,27 @@
             
             <!-- Controles completos (ocultos al inicio) -->
             <div id="full-controls" class="hidden flex flex-wrap justify-center gap-4 w-full">
-                <button onclick="togglePause()" id="pause-button" class="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors font-semibold flex-grow sm:flex-grow-0">
-                    PAUSAR
+                <button onclick="togglePause()" id="pause-button" class="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors font-semibold flex-grow sm:flex-grow-0 flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="hidden sm:inline">PAUSAR</span>
                 </button>
-                <button onclick="nextStep()" class="px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors shadow-lg font-semibold flex-grow sm:flex-grow-0">
-                    ADELANTAR
+                <button onclick="nextStep()" class="px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors shadow-lg font-semibold flex-grow sm:flex-grow-0 flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10.293 15.707a1 1 0 010-1.414L14.586 10l-4.293-4.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                        <path fill-rule="evenodd" d="M3 10a1 1 0 011-1h10a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="hidden sm:inline">SIGUIENTE</span>
                 </button>
-                <button onclick="goBack()" class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold flex-grow sm:flex-grow-0">
-                    ATRAS
+                <button onclick="goBack()" class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold flex-grow sm:flex-grow-0 flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M9.707 4.293a1 1 0 010 1.414L5.414 10l4.293 4.293a1 1 0 01-1.414 1.414l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        <path fill-rule="evenodd" d="M17 10a1 1 0 01-1 1H6a1 1 0 110-2h10a1 1 0 011 1z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="hidden sm:inline">ANTERIOR</span>
                 </button>
-                <!-- Botón para guardado manual -->
-                <button onclick="saveProgress('manual')" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold flex-grow sm:flex-grow-0">
-                    GUARDAR
-                </button>
+
                 <!-- Botón de Reinicio (oculto, solo para desarrollador/debugging) -->
                 <button onclick="resetWorkout()" id="reset-button" class="hidden">REINICIAR</button>
             </div>
@@ -1200,6 +1247,23 @@
         const $workoutButtons = document.getElementById('workout-buttons');
         const $detailsLink = document.getElementById('details-link');
 
+        // --- FUNCIONES DE UI PARA BOTONES CON ICONOS ---
+        function updatePauseButton(isPaused) {
+            const pauseIcon = `
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                </svg>
+                <span class="hidden sm:inline">PAUSAR</span>
+            `;
+            const playIcon = `
+                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path>
+                </svg>
+                <span class="hidden sm:inline">REANUDAR</span>
+            `;
+            
+            $pauseButton.innerHTML = isPaused ? playIcon : pauseIcon;
+        }
 
         // --- AUDIO PARA SEÑALES ---
         const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -1332,7 +1396,6 @@
         // --- FUNCIÓN PARA GUARDAR EL PROGRESO (FIREBASE + JSON RESPALDO) ---
         async function saveProgress(source = 'auto') {
             if (!state.isRunning || state.currentPhase === 'FINISHED') {
-                console.log(`Guardado omitido (IsRunning: ${state.isRunning}, Phase: ${state.currentPhase})`);
                 return;
             }
 
@@ -1351,7 +1414,7 @@
                 try {
                     const progressDocRef = doc(db, `artifacts/${appId}/users/${userId}/workout_progress`, 'status');
                     await setDoc(progressDocRef, progressData);
-                    console.log("Progreso guardado en Firestore.");
+                    // Progreso guardado silenciosamente en Firestore
                 } catch (e) {
                     console.error("Error guardando en Firestore:", e);
                     // Fallback a JSON si Firebase falla
@@ -1373,18 +1436,12 @@
                 // Guardar en archivo físico en el servidor
                 await saveToPhysicalFile('saveProgress', progressData);
                 
-                if (source === 'manual') {
-                    document.getElementById('progress-info').textContent = '¡Progreso guardado en archivo físico!';
-                    setTimeout(() => {
-                        document.getElementById('progress-info').textContent = 'Selecciona una rutina para empezar.';
-                    }, 3000);
-                }
+
                 
-                console.log("✅ Progreso guardado en sistema JSON físico y local.");
+                // Progreso guardado silenciosamente
             } catch (e) {
-                console.error("❌ Error guardando progreso:", e);
+                console.error("Error guardando progreso:", e);
                 // Si falla el archivo físico, al menos queda en localStorage
-                console.log("⚠️ Progreso guardado solo en localStorage como respaldo.");
             }
         }
 
@@ -1583,7 +1640,7 @@
                     return;
                 }
 
-                console.log("No se encontró progreso guardado.");
+                // No hay progreso previo
                 
             } catch (e) {
                 console.error("Error cargando progreso:", e);
@@ -1754,13 +1811,13 @@
             if (state.currentStepIndex === 0) {
                 // Primer paso: mostrar botón INICIAR
                 if (state.isPaused) {
-                    $pauseButton.textContent = 'PAUSAR';
+                    updatePauseButton(false);
                     $timerBox.classList.add('text-gray-500');
                 }
             } else {
                 // Pasos subsiguientes: continuar automáticamente
                 state.isPaused = false;
-                $pauseButton.textContent = 'PAUSAR';
+                updatePauseButton(false);
                 $timerBox.classList.remove('text-gray-500');
             }
             
@@ -2043,7 +2100,7 @@
             
             $roundInfo.textContent = progressText;
 
-            $pauseButton.textContent = state.isPaused ? 'REANUDAR' : 'PAUSAR';
+            updatePauseButton(state.isPaused);
         }
 
         window.togglePause = function() {
@@ -2056,7 +2113,7 @@
                 state.interval = setInterval(tick, 1000);
                 $timerBox.classList.remove('text-gray-500');
             }
-            $pauseButton.textContent = state.isPaused ? 'REANUDAR' : 'PAUSAR';
+            updatePauseButton(state.isPaused);
         }
 
         function finishWorkout() {
@@ -2101,7 +2158,7 @@
             $selectionScreen.classList.remove('hidden');
             $timerScreen.classList.add('hidden'); 
             $pauseButton.classList.remove('hidden');
-            $pauseButton.textContent = 'PAUSAR';
+            updatePauseButton(false);
             
             // Ocultar botón de volver al inicio
             document.getElementById('back-to-start-button').classList.add('hidden');
@@ -2146,7 +2203,7 @@
             
             // Mostrar controles de entrenamiento normales
             $pauseButton.classList.remove('hidden');
-            $pauseButton.textContent = 'PAUSAR';
+            updatePauseButton(false);
             
             // Actualizar información del día
             updateTodaysRoutineDisplay();
@@ -2373,7 +2430,7 @@
             $playButton.classList.add('hidden');
             $fullControls.classList.remove('hidden');
             $startMessage.classList.add('hidden');
-            $pauseButton.textContent = 'PAUSAR';
+            updatePauseButton(false);
             $timerBox.classList.remove('text-gray-500');
             
             // Iniciar el cronómetro
@@ -2678,7 +2735,7 @@
             // Ocultar editor
             document.getElementById('profile-editor').classList.add('hidden');
             
-            alert('✅ Perfil guardado exitosamente');
+            // Perfil guardado silenciosamente
         }
 
         function calculateBMI(height, weight) {
@@ -2743,9 +2800,7 @@
             if (weightInput) weightInput.value = '';
             loadUserProfile();
 
-            if (showAlert) {
-                alert('✅ Peso registrado exitosamente');
-            }
+            // Peso registrado silenciosamente
         }
 
         function loadWeightHistory() {
@@ -3531,6 +3586,58 @@
 
         window.onload = initApp;
 
+    </script>
+    
+    <!-- Service Worker para PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then((registration) => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch((registrationError) => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+        
+        // Handle PWA shortcuts
+        const urlParams = new URLSearchParams(window.location.search);
+        const action = urlParams.get('action');
+        
+        if (action) {
+            window.addEventListener('load', () => {
+                setTimeout(() => {
+                    switch(action) {
+                        case 'start':
+                            showSection('training');
+                            if (typeof startTodaysWorkout === 'function') {
+                                startTodaysWorkout();
+                            }
+                            break;
+                        case 'calendar':
+                            showSection('calendar');
+                            break;
+                        case 'profile':
+                            showSection('profile');
+                            break;
+                    }
+                }, 1000);
+            });
+        }
+        
+        // Install prompt for PWA
+        let deferredPrompt;
+        
+        window.addEventListener('beforeinstallprompt', (e) => {
+            // Prevent the mini-infobar from appearing on mobile
+            e.preventDefault();
+            // Stash the event so it can be triggered later
+            deferredPrompt = e;
+            // Show install button (you can add this to your UI)
+            console.log('PWA install prompt available');
+        });
     </script>
 </body>
 </html>

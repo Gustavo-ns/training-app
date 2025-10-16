@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- Fondo circular con gradiente -->
+  <defs>
+    <radialGradient id="bgGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#f97316;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ea580c;stop-opacity:1" />
+    </radialGradient>
+    <linearGradient id="textGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#e2e8f0;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Círculo de fondo -->
+  <circle cx="128" cy="128" r="120" fill="url(#bgGradient)" stroke="#c2410c" stroke-width="4"/>
+  
+  <!-- Icono de pesas estilizado -->
+  <g transform="translate(128, 100)">
+    <!-- Barra central -->
+    <rect x="-40" y="-6" width="80" height="12" fill="url(#textGradient)" rx="6"/>
+    
+    <!-- Peso izquierdo -->
+    <rect x="-55" y="-18" width="20" height="36" fill="url(#textGradient)" rx="4"/>
+    <rect x="-50" y="-12" width="10" height="24" fill="#ffffff" rx="2"/>
+    
+    <!-- Peso derecho -->
+    <rect x="35" y="-18" width="20" height="36" fill="url(#textGradient)" rx="4"/>
+    <rect x="40" y="-12" width="10" height="24" fill="#ffffff" rx="2"/>
+  </g>
+  
+  <!-- Texto "HIIT" -->
+  <text x="128" y="170" font-family="Arial Black, sans-serif" font-weight="900" font-size="32" 
+        text-anchor="middle" fill="url(#textGradient)" stroke="#1f2937" stroke-width="1">HIIT</text>
+  
+  <!-- Elemento decorativo - rayos de energía -->
+  <g transform="translate(128, 128)" opacity="0.3">
+    <path d="M 0,-80 L 8,-60 L -8,-60 Z" fill="#fef3c7"/>
+    <path d="M 56,-56 L 68,-44 L 48,-44 Z" fill="#fef3c7"/>
+    <path d="M 80,0 L 60,8 L 60,-8 Z" fill="#fef3c7"/>
+    <path d="M 56,56 L 48,44 L 68,44 Z" fill="#fef3c7"/>
+    <path d="M 0,80 L -8,60 L 8,60 Z" fill="#fef3c7"/>
+    <path d="M -56,56 L -68,44 L -48,44 Z" fill="#fef3c7"/>
+    <path d="M -80,0 L -60,-8 L -60,8 Z" fill="#fef3c7"/>
+    <path d="M -56,-56 L -48,-44 L -68,-44 Z" fill="#fef3c7"/>
+  </g>
+</svg>

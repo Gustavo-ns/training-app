@@ -72,6 +72,15 @@
         .hidden {
             display: none !important;
         }
+        
+        /* Estilos para la lista de ejercicios */
+        .exercise-item:hover {
+            transform: translateX(4px);
+        }
+        
+        .phase-header {
+            background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+        }
     </style>
     <script>
         tailwind.config = {
@@ -138,9 +147,14 @@
                 🚀 Iniciar Entrenamiento
             </button>
             
+            <!-- Botón para ver ejercicios -->
+            <button onclick="showExerciseList()" class="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 transition-colors shadow-lg font-medium text-base">
+                📋 Ver Ejercicios de Hoy
+            </button>
+            
             <!-- Botón secundario para cambiar rutina (opcional) -->
             <button onclick="showRoutineSelector()" class="w-full py-2 text-sm rounded-lg bg-gray-600 hover:bg-gray-500 transition-colors text-gray-300">
-                📋 Elegir otra rutina
+                🔄 Elegir otra rutina
             </button>
         </div>
     </section>
@@ -477,6 +491,34 @@
                 </button>
                 <button onclick="continueWithoutResume()" class="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-semibold">
                     COMENZAR NUEVA
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Lista de Ejercicios -->
+    <div id="exercise-list-modal" class="modal-overlay hidden">
+        <div class="modal-content max-w-2xl w-full mx-4">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-white">📋 Ejercicios de Hoy</h3>
+                <button onclick="closeExerciseList()" class="text-gray-400 hover:text-white transition-colors text-2xl font-bold" title="Cerrar">&times;</button>
+            </div>
+            
+            <div class="mb-4">
+                <p id="routine-title" class="text-lg font-semibold text-orange-400 mb-2"></p>
+                <p class="text-sm text-gray-400">Revisa los ejercicios antes de empezar tu entrenamiento</p>
+            </div>
+            
+            <div id="exercise-list-content" class="max-h-96 overflow-y-auto space-y-4">
+                <!-- El contenido se genera dinámicamente -->
+            </div>
+            
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeExerciseList()" class="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
+                    ❌ Cerrar
+                </button>
+                <button onclick="startFromExerciseList()" class="flex-1 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors font-bold">
+                    🚀 ¡Empezar Ahora!
                 </button>
             </div>
         </div>
@@ -2175,6 +2217,152 @@
             if (routineElement) {
                 routineElement.textContent = getTodaysRoutineName();
             }
+        }
+
+        // --- FUNCIONES PARA LISTA DE EJERCICIOS ---
+        window.showExerciseList = function() {
+            const routineKey = getTodaysRoutine();
+            const routineName = getTodaysRoutineName();
+            const exercises = buildRoutine(routineKey);
+            
+            // Actualizar título de la rutina
+            document.getElementById('routine-title').textContent = `${routineName} (${getDayName()})`;
+            
+            // Generar el contenido de la lista
+            const content = document.getElementById('exercise-list-content');
+            content.innerHTML = '';
+            
+            let currentPhase = '';
+            let phaseContainer = null;
+            let exerciseCount = 0;
+            
+            exercises.forEach((step, index) => {
+                // Crear nueva fase si es diferente
+                if (step.phase !== currentPhase) {
+                    currentPhase = step.phase;
+                    exerciseCount = 0;
+                    
+                    phaseContainer = document.createElement('div');
+                    phaseContainer.className = 'mb-4';
+                    
+                    const phaseHeader = document.createElement('h4');
+                    phaseHeader.className = 'font-bold text-lg mb-3 text-white border-b border-gray-600 pb-2';
+                    
+                    // Iconos para cada fase
+                    const phaseIcons = {
+                        'WARMUP': '🔥',
+                        'CIRCUITO PRINCIPAL': '💪',
+                        'ENFRIAMIENTO': '🧘'
+                    };
+                    
+                    phaseHeader.textContent = `${phaseIcons[step.phase] || '📋'} ${step.phase}`;
+                    phaseContainer.appendChild(phaseHeader);
+                    
+                    const phaseExercises = document.createElement('div');
+                    phaseExercises.className = 'space-y-2 ml-4';
+                    phaseContainer.appendChild(phaseExercises);
+                    
+                    content.appendChild(phaseContainer);
+                }
+                
+                // Solo mostrar ejercicios (no descansos)
+                if (!step.isRest) {
+                    exerciseCount++;
+                    const exerciseDiv = document.createElement('div');
+                    exerciseDiv.className = 'flex items-center gap-3 p-3 bg-gray-600 rounded-lg hover:bg-gray-500 transition-colors';
+                    
+                    const exercise = EXERCISE_DATABASE[step.name];
+                    const duration = formatDuration(step.duration);
+                    
+                    exerciseDiv.innerHTML = `
+                        <div class="flex-shrink-0 w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                            ${exerciseCount}
+                        </div>
+                        <div class="flex-grow">
+                            <div class="font-semibold text-white">${step.name}</div>
+                            <div class="text-sm text-gray-300">${duration}</div>
+                            ${exercise ? `<div class="text-xs text-gray-400 mt-1">🎯 ${exercise.muscles ? exercise.muscles.join(', ') : 'Múltiples grupos'}</div>` : ''}
+                        </div>
+                        <div class="flex-shrink-0 text-gray-400">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                    `;
+                    
+                    // Agregar evento click para mostrar detalles
+                    if (exercise) {
+                        exerciseDiv.style.cursor = 'pointer';
+                        exerciseDiv.onclick = () => showExerciseDetails(step.name, exercise);
+                    }
+                    
+                    phaseContainer.querySelector('.space-y-2').appendChild(exerciseDiv);
+                }
+            });
+            
+            // Mostrar el modal
+            document.getElementById('exercise-list-modal').classList.remove('hidden');
+        }
+
+        window.closeExerciseList = function() {
+            document.getElementById('exercise-list-modal').classList.add('hidden');
+        }
+
+        window.startFromExerciseList = function() {
+            closeExerciseList();
+            startTodaysWorkout();
+        }
+
+        function formatDuration(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            if (minutes > 0) {
+                return `${minutes}:${remainingSeconds.toString().padStart(2, '0')} min`;
+            }
+            return `${seconds}s`;
+        }
+
+        function showExerciseDetails(exerciseName, exercise) {
+            const detailModal = document.createElement('div');
+            detailModal.className = 'modal-overlay';
+            detailModal.innerHTML = `
+                <div class="modal-content max-w-lg w-full mx-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-xl font-bold text-white">${exerciseName}</h3>
+                        <button onclick="this.parentElement.parentElement.parentElement.remove()" class="text-gray-400 hover:text-white transition-colors text-2xl font-bold">&times;</button>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="flex flex-wrap gap-2 mb-3">
+                            <span class="px-2 py-1 bg-blue-600 text-white text-xs rounded">${exercise.category}</span>
+                            <span class="px-2 py-1 bg-green-600 text-white text-xs rounded">${exercise.equipment || 'Sin equipo'}</span>
+                        </div>
+                        <p class="text-sm text-gray-300 italic mb-3">${exercise.description}</p>
+                        <p class="text-sm text-gray-400">🎯 Músculos: ${exercise.muscles ? exercise.muscles.join(', ') : 'Múltiples'}</p>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <div>
+                            <h5 class="font-semibold text-white mb-2">📋 Instrucciones:</h5>
+                            <ol class="text-sm text-gray-200 space-y-1 list-decimal list-inside">
+                                ${exercise.instructions ? exercise.instructions.map(inst => `<li>${inst}</li>`).join('') : '<li>Información no disponible</li>'}
+                            </ol>
+                        </div>
+                        
+                        <div>
+                            <h5 class="font-semibold text-white mb-2">💡 Consejos:</h5>
+                            <ul class="text-sm text-gray-200 space-y-1 list-disc list-inside">
+                                ${exercise.tips ? exercise.tips.map(tip => `<li>${tip}</li>`).join('') : '<li>Información no disponible</li>'}
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <button onclick="this.parentElement.parentElement.remove()" class="mt-4 w-full px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-lg transition-colors">
+                        Cerrar
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(detailModal);
         }
 
         // Función para iniciar el cronómetro (botón PLAY)

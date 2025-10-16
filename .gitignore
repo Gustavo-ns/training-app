@@ -1,0 +1,36 @@
+# Node modules and system files
+node_modules/
+.DS_Store
+Thumbs.db
+
+# PHP server files
+*.log
+
+# User data and local storage
+workout_data.json
+user_profile.json
+weight_history.json
+workout_progress.json
+
+# VSCode settings
+.vscode/
+
+# OS generated files
+*.swp
+*.swo
+
+# Ignore PHP session files
+sess_*
+
+# Ignore environment and config overrides
+.env
+.env.*
+
+# Ignore backup files
+*~
+*.bak
+*.tmp
+
+# Ignore local API data
+api/data_handler.php.bak
+api/*.local.json

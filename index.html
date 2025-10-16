@@ -281,6 +281,13 @@
             
             <!-- Controles completos (ocultos al inicio) -->
             <div id="full-controls" class="hidden flex flex-wrap justify-center gap-4 w-full">
+                <button onclick="goBack()" class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold flex-grow sm:flex-grow-0 flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M9.707 4.293a1 1 0 010 1.414L5.414 10l4.293 4.293a1 1 0 01-1.414 1.414l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        <path fill-rule="evenodd" d="M17 10a1 1 0 01-1 1H6a1 1 0 110-2h10a1 1 0 011 1z" clip-rule="evenodd"></path>
+                    </svg>
+                    <span class="hidden sm:inline">ANTERIOR</span>
+                </button>
                 <button onclick="togglePause()" id="pause-button" class="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors font-semibold flex-grow sm:flex-grow-0 flex items-center justify-center gap-2">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path>
@@ -293,13 +300,6 @@
                         <path fill-rule="evenodd" d="M3 10a1 1 0 011-1h10a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
                     </svg>
                     <span class="hidden sm:inline">SIGUIENTE</span>
-                </button>
-                <button onclick="goBack()" class="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold flex-grow sm:flex-grow-0 flex items-center justify-center gap-2">
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M9.707 4.293a1 1 0 010 1.414L5.414 10l4.293 4.293a1 1 0 01-1.414 1.414l-5-5a1 1 0 010-1.414l5-5a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                        <path fill-rule="evenodd" d="M17 10a1 1 0 01-1 1H6a1 1 0 110-2h10a1 1 0 011 1z" clip-rule="evenodd"></path>
-                    </svg>
-                    <span class="hidden sm:inline">ANTERIOR</span>
                 </button>
 
                 <!-- Botón de Reinicio (oculto, solo para desarrollador/debugging) -->

@@ -2784,36 +2784,74 @@
             let missed = 0;
             let currentStreak = 0;
             let totalPastDays = 0;
+            let firstWorkoutDate = null;
 
-            // Recorrer todos los días del mes hasta hoy
+            // Encontrar la fecha del primer entrenamiento completado
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const checkDate = new Date(currentCalendarYear, currentCalendarMonth, day);
+                const dateString = formatDateForComparison(checkDate);
+                
+                if (isWorkoutCompleted(dateString)) {
+                    if (!firstWorkoutDate) {
+                        firstWorkoutDate = new Date(checkDate);
+                    }
+                }
+            }
+
+            // Recorrer todos los días del mes hasta hoy (solo desde el primer entrenamiento)
             for (let day = 1; day <= lastDay.getDate(); day++) {
                 const currentDate = new Date(currentCalendarYear, currentCalendarMonth, day);
                 const dateString = formatDateForComparison(currentDate);
+                const dayOfWeek = currentDate.getDay(); // 0 = Domingo, 6 = Sábado
                 
-                // Solo contar días pasados (no incluir hoy ni días futuros)
-                if (currentDate < today) {
-                    totalPastDays++;
-                    
-                    if (isWorkoutCompleted(dateString)) {
-                        completed++;
+                // Solo contar días que no sean fin de semana (0 = Domingo, 6 = Sábado)
+                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                
+                // Solo contar si es un día pasado y después del primer entrenamiento
+                if (currentDate < today && firstWorkoutDate && currentDate >= firstWorkoutDate) {
+                    // Los fines de semana no cuentan como días obligatorios
+                    if (!isWeekend) {
+                        totalPastDays++;
+                        
+                        if (isWorkoutCompleted(dateString)) {
+                            completed++;
+                        } else {
+                            missed++;
+                        }
                     } else {
-                        missed++;
+                        // Los fines de semana solo cuentan si se completaron (extras)
+                        if (isWorkoutCompleted(dateString)) {
+                            completed++;
+                        }
                     }
                 }
             }
 
             // Calcular racha actual (días consecutivos completados hacia atrás desde ayer)
+            // Solo contar días de semana (lunes a viernes)
             let checkDate = new Date(today);
             checkDate.setDate(checkDate.getDate() - 1); // Empezar desde ayer
             
             while (checkDate >= firstDay && checkDate.getMonth() === currentCalendarMonth) {
                 const dateString = formatDateForComparison(checkDate);
-                if (isWorkoutCompleted(dateString)) {
-                    currentStreak++;
-                    checkDate.setDate(checkDate.getDate() - 1);
-                } else {
-                    break;
+                const dayOfWeek = checkDate.getDay();
+                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                
+                // Solo contar días de semana para la racha
+                if (!isWeekend) {
+                    // Si el día está antes del primer entrenamiento, detener
+                    if (firstWorkoutDate && checkDate < firstWorkoutDate) {
+                        break;
+                    }
+                    
+                    if (isWorkoutCompleted(dateString)) {
+                        currentStreak++;
+                    } else {
+                        break; // Romper la racha si falta un día
+                    }
                 }
+                
+                checkDate.setDate(checkDate.getDate() - 1);
             }
 
             // Calcular porcentaje

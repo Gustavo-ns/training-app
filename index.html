@@ -527,6 +527,9 @@
         <div class="p-4 bg-gray-700 rounded-lg">
             <h3 class="text-lg font-bold mb-3 text-gray-100">🔧 Herramientas</h3>
             <div class="text-center space-y-2">
+                <button onclick="requestNotificationPermission()" class="w-full px-4 py-2 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700 transition-colors">
+                    🔔 Activar Notificaciones
+                </button>
                 <button onclick="testFirebaseConnection()" class="w-full px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors">
                     🔧 Probar Conexión Firebase
                 </button>
@@ -2260,6 +2263,14 @@
             
             // Guardar el entrenamiento completado
             logCompletedWorkout(state.currentRoutineKey);
+            
+            // Calcular y notificar racha después de guardar
+            setTimeout(() => {
+                const currentStreak = calculateCurrentStreak();
+                if (currentStreak > 0 && typeof notifyStreakAchievement === 'function') {
+                    notifyStreakAchievement(currentStreak);
+                }
+            }, 1000);
         }
         
         window.resetWorkout = function() {
@@ -3345,6 +3356,15 @@
                 loadHistory();
                 loadProgress();
             }
+            
+            // Solicitar permisos de notificación después de cargar la app
+            setTimeout(() => {
+                const notificationsEnabled = localStorage.getItem('notifications_enabled');
+                if (!notificationsEnabled && Notification.permission === 'default') {
+                    // Solo preguntar si nunca se ha preguntado
+                    console.log('💡 Tip: Activa las notificaciones en la sección Datos');
+                }
+            }, 3000);
         }
 
         // --- FUNCIONES DE DETALLES DE EJERCICIOS ---
@@ -3810,15 +3830,219 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
+                navigator.serviceWorker.register('/training-app/sw.js')
                     .then((registration) => {
                         console.log('SW registered: ', registration);
+                        
+                        // Guardar la registration globalmente para notificaciones
+                        window.swRegistration = registration;
+                        
+                        // Verificar si ya tenemos permiso de notificaciones
+                        if (Notification.permission === 'granted') {
+                            console.log('✅ Permisos de notificación concedidos');
+                        } else if (Notification.permission === 'default') {
+                            console.log('⚠️ Permisos de notificación pendientes');
+                        }
                     })
                     .catch((registrationError) => {
                         console.log('SW registration failed: ', registrationError);
                     });
             });
         }
+        
+        // Función para solicitar permiso de notificaciones
+        async function requestNotificationPermission() {
+            if (!('Notification' in window)) {
+                console.log('Este navegador no soporta notificaciones');
+                return false;
+            }
+            
+            if (Notification.permission === 'granted') {
+                return true;
+            }
+            
+            if (Notification.permission !== 'denied') {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    console.log('✅ Permiso de notificaciones concedido');
+                    // Programar notificaciones diarias
+                    scheduleNotifications();
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+        
+        // Función para mostrar una notificación local
+        function showLocalNotification(title, options = {}) {
+            if (!window.swRegistration) {
+                console.log('Service Worker no disponible');
+                return;
+            }
+            
+            if (Notification.permission === 'granted') {
+                const defaultOptions = {
+                    body: '¡Es hora de entrenar! 💪',
+                    icon: '/training-app/icon-192.png',
+                    badge: '/training-app/favicon-32.png',
+                    vibrate: [200, 100, 200],
+                    tag: 'workout-reminder',
+                    requireInteraction: false,
+                    data: {
+                        url: '/training-app/?action=start'
+                    },
+                    actions: [
+                        { action: 'start', title: '🏃 Entrenar Ahora' },
+                        { action: 'later', title: '⏰ Más Tarde' }
+                    ]
+                };
+                
+                window.swRegistration.showNotification(title, {
+                    ...defaultOptions,
+                    ...options
+                });
+            }
+        }
+        
+        // Función para programar notificaciones diarias
+        function scheduleNotifications() {
+            // Verificar si ya tenemos notificaciones programadas
+            const notificationsEnabled = localStorage.getItem('notifications_enabled');
+            
+            if (notificationsEnabled !== 'true') {
+                localStorage.setItem('notifications_enabled', 'true');
+                console.log('✅ Notificaciones programadas activadas');
+            }
+            
+            // Programar verificación diaria
+            checkAndSendDailyNotification();
+            
+            // Verificar cada hora si hay que enviar notificación
+            setInterval(checkAndSendDailyNotification, 60 * 60 * 1000); // Cada hora
+        }
+        
+        // Función para verificar y enviar notificación diaria
+        function checkAndSendDailyNotification() {
+            const notificationsEnabled = localStorage.getItem('notifications_enabled');
+            if (notificationsEnabled !== 'true') return;
+            
+            const now = new Date();
+            const hour = now.getHours();
+            const dayOfWeek = now.getDay();
+            
+            // No enviar notificaciones en fines de semana (opcional)
+            const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+            
+            // Verificar si ya entrenamos hoy
+            const todayString = now.toISOString().split('T')[0];
+            const workoutData = JSON.parse(localStorage.getItem('workout_data') || '{}');
+            const alreadyTrained = workoutData.history && workoutData.history[todayString];
+            
+            // Verificar si ya enviamos notificación hoy
+            const lastNotification = localStorage.getItem('last_notification_date');
+            const alreadyNotified = lastNotification === todayString;
+            
+            // Enviar notificación si:
+            // - Es día de semana (lunes a viernes) O si el usuario entrena fines de semana
+            // - Es entre las 8am y 9pm
+            // - No ha entrenado hoy
+            // - No hemos enviado notificación hoy
+            if (!alreadyTrained && !alreadyNotified && hour >= 8 && hour < 21) {
+                // Calcular la racha actual
+                const streak = calculateCurrentStreak();
+                
+                let notificationTitle = '🔥 HIIT Trainer';
+                let notificationBody = '¡Es hora de entrenar! 💪';
+                
+                if (streak > 0) {
+                    notificationTitle = `🔥 ¡Racha de ${streak} días!`;
+                    notificationBody = `¡No rompas tu racha de ${streak} días! Es hora de entrenar 💪`;
+                } else if (streak === 0) {
+                    notificationBody = '¡Comienza tu racha hoy! Es hora de entrenar 💪';
+                }
+                
+                // Si es fin de semana, ajustar mensaje
+                if (isWeekend) {
+                    notificationBody = '¿Entrenamiento extra hoy? ¡Vamos! 💪';
+                }
+                
+                showLocalNotification(notificationTitle, {
+                    body: notificationBody,
+                    tag: 'daily-reminder'
+                });
+                
+                // Marcar que ya enviamos notificación hoy
+                localStorage.setItem('last_notification_date', todayString);
+                console.log(`📬 Notificación enviada: ${notificationTitle}`);
+            }
+        }
+        
+        // Función para calcular racha actual
+        function calculateCurrentStreak() {
+            const workoutData = JSON.parse(localStorage.getItem('workout_data') || '{}');
+            if (!workoutData.history) return 0;
+            
+            let streak = 0;
+            const today = new Date();
+            
+            // Empezar desde ayer
+            let checkDate = new Date(today);
+            checkDate.setDate(checkDate.getDate() - 1);
+            
+            // Contar días consecutivos hacia atrás
+            for (let i = 0; i < 30; i++) { // Máximo 30 días hacia atrás
+                const dateString = checkDate.toISOString().split('T')[0];
+                const dayOfWeek = checkDate.getDay();
+                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                
+                // Solo contar días de semana
+                if (!isWeekend) {
+                    if (workoutData.history[dateString]) {
+                        streak++;
+                    } else {
+                        break; // Romper si falta un día
+                    }
+                }
+                
+                checkDate.setDate(checkDate.getDate() - 1);
+            }
+            
+            return streak;
+        }
+        
+        // Función para enviar notificación de logro de racha
+        function notifyStreakAchievement(streak) {
+            const milestones = [3, 5, 7, 10, 14, 21, 30, 50, 100];
+            
+            if (milestones.includes(streak)) {
+                const messages = {
+                    3: '¡3 días consecutivos! 🎯',
+                    5: '¡5 días! ¡Vas muy bien! 🌟',
+                    7: '¡Una semana completa! ¡Increíble! 🏆',
+                    10: '¡10 días! ¡Eres imparable! 💪',
+                    14: '¡2 semanas! ¡Leyenda! 🔥',
+                    21: '¡3 semanas! ¡Máquina! ⚡',
+                    30: '¡UN MES COMPLETO! ¡CAMPEÓN! 👑',
+                    50: '¡50 DÍAS! ¡FENÓMENO! 🚀',
+                    100: '¡100 DÍAS! ¡LEYENDA ABSOLUTA! 💯'
+                };
+                
+                showLocalNotification('🎉 ¡Logro Desbloqueado!', {
+                    body: messages[streak] || `¡${streak} días de racha! ¡Sigue así!`,
+                    tag: 'streak-achievement',
+                    requireInteraction: true,
+                    vibrate: [200, 100, 200, 100, 200]
+                });
+            }
+        }
+        
+        // Hacer funciones globales
+        window.requestNotificationPermission = requestNotificationPermission;
+        window.showLocalNotification = showLocalNotification;
+        window.scheduleNotifications = scheduleNotifications;
+        window.notifyStreakAchievement = notifyStreakAchievement;
+        window.calculateCurrentStreak = calculateCurrentStreak;
         
         // Handle PWA shortcuts
         const urlParams = new URLSearchParams(window.location.search);

@@ -3,8 +3,8 @@
   "short_name": "HIIT Trainer",
   "description": "Tu centro de entrenamiento HIIT completo con rutinas de 30 minutos, seguimiento de progreso y calendario de entrenamientos.",
   "lang": "es",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "/training-app/",
+  "scope": "/training-app/",
   "display": "standalone",
   "orientation": "portrait",
   "theme_color": "#f97316",
@@ -47,7 +47,7 @@
       "name": "Iniciar Entrenamiento",
       "short_name": "Entrenar",
       "description": "Comenzar el entrenamiento del día",
-      "url": "/?action=start",
+      "url": "/training-app/?action=start",
       "icons": [
         {
           "src": "icon-192.png",
@@ -60,7 +60,7 @@
       "name": "Ver Calendario",
       "short_name": "Calendario",
       "description": "Revisar el calendario de entrenamientos",
-      "url": "/?action=calendar",
+      "url": "/training-app/?action=calendar",
       "icons": [
         {
           "src": "icon-192.png",
@@ -73,7 +73,7 @@
       "name": "Mi Perfil",
       "short_name": "Perfil",
       "description": "Ver y editar perfil de usuario",
-      "url": "/?action=profile",
+      "url": "/training-app/?action=profile",
       "icons": [
         {
           "src": "icon-192.png",

@@ -1339,6 +1339,8 @@
         // Función para generar la estructura completa del circuito
         function createCircuitSteps(exercises, workTime, restTime) {
             const steps = [];
+            const bigRestTime = 60; // Descanso grande de 60 segundos entre rondas
+            
             for (let r = 0; r < ROUNDS; r++) {
                 for (let i = 0; i < exercises.length; i++) {
                     // Paso de TRABAJO
@@ -1352,9 +1354,10 @@
                     
                     // Paso de DESCANSO (solo si no es el último ejercicio del último round)
                     if (!(r === ROUNDS - 1 && i === exercises.length - 1)) {
+                        const isBigRest = (i === exercises.length - 1); // Es descanso grande si es fin de ronda
                         steps.push({
-                            name: (i === exercises.length - 1) ? `DESCANSO GRANDE (Fin Ronda ${r + 1})` : `DESCANSO (Próximo: ${exercises[i+1] || exercises[0]})`,
-                            duration: restTime,
+                            name: isBigRest ? `DESCANSO GRANDE (Fin Ronda ${r + 1})` : `DESCANSO (Próximo: ${exercises[i+1] || exercises[0]})`,
+                            duration: isBigRest ? bigRestTime : restTime,
                             isRest: true,
                             style: 'rest-color',
                         });

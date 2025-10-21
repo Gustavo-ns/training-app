@@ -2694,18 +2694,38 @@
                 dayElement.className = 'h-8 w-8 rounded text-xs flex items-center justify-center font-medium transition-colors cursor-pointer';
                 dayElement.textContent = day;
 
+                // Encontrar el primer día de entrenamiento del mes
+                let firstWorkoutDate = null;
+                for (let d = 1; d <= daysInMonth; d++) {
+                    const checkDate = new Date(currentCalendarYear, currentCalendarMonth, d);
+                    const checkDateString = formatDateForComparison(checkDate);
+                    if (isWorkoutCompleted(checkDateString)) {
+                        firstWorkoutDate = checkDate;
+                        break;
+                    }
+                }
+
                 // Determinar el estado del día
+                const dayOfWeek = currentDate.getDay();
+                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                
                 if (dateString === todayString) {
                     // Hoy
                     dayElement.className += ' bg-blue-500 text-white';
                 } else if (isWorkoutCompleted(dateString)) {
                     // Día completado
                     dayElement.className += ' bg-green-500 text-white hover:bg-green-600';
-                } else if (currentDate < today) {
-                    // Día pasado sin completar
-                    dayElement.className += ' bg-red-500 text-white hover:bg-red-600';
+                } else if (currentDate < today && firstWorkoutDate && currentDate >= firstWorkoutDate) {
+                    // Día pasado sin completar (solo después del primer entrenamiento)
+                    // Los fines de semana no se marcan como perdidos
+                    if (!isWeekend) {
+                        dayElement.className += ' bg-red-500 text-white hover:bg-red-600';
+                    } else {
+                        // Fin de semana no entrenado (después del primer entrenamiento)
+                        dayElement.className += ' bg-gray-600 text-gray-400 hover:bg-gray-500';
+                    }
                 } else {
-                    // Día futuro
+                    // Día futuro o anterior al primer entrenamiento
                     dayElement.className += ' bg-gray-600 text-gray-300 hover:bg-gray-500';
                 }
 

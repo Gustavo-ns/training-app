@@ -2258,6 +2258,7 @@
             $exerciseName.textContent = '¡FELICITACIONES! Vuelve pronto.';
             $timerBox.textContent = '00:00';
             $timerBox.className = 'timer-display mb-8 finished-color';
+            $timerBox.classList.add('hidden'); // Ocultar el contador cuando termina
             $roundInfo.textContent = `Rutina ${state.currentRoutineKey} terminada.`;
             $progressText.textContent = '¡Entrenamiento completado! 🎉';
 
@@ -2265,6 +2266,10 @@
             $pauseButton.classList.add('hidden');
             document.getElementById('full-controls').classList.add('hidden');
             $secondaryControls.classList.add('hidden');
+            
+            // Ocultar también el botón de detalles
+            document.getElementById('show-details-button').classList.add('hidden');
+            document.getElementById('details-link').classList.add('hidden');
             
             // Mostrar botón para volver al inicio
             showBackToStartButton();

@@ -263,13 +263,13 @@
         </a>
 
         <!-- Temporizador -->
-        <div id="timer-box" class="timer-display work-color mb-8 text-gray-500">
+        <div id="timer-box" class="hidden timer-display work-color mb-8 text-gray-500">
             00:00
         </div>
         
         <!-- Mensaje de inicio (NUEVO) -->
-        <div id="start-message" class="mb-4 px-4 py-2 bg-green-600 text-white text-sm rounded-lg text-center">
-            🚀 Presiona INICIAR cuando estés listo
+        <div id="start-message" class="mb-4 px-6 py-4 bg-gradient-to-r from-green-600 to-green-500 text-white text-lg rounded-xl text-center shadow-lg font-semibold">
+            🚀 Presiona <span class="font-bold">INICIAR</span> cuando estés listo
         </div>
         
         <!-- Indicador de preparación (NUEVO) -->
@@ -1457,6 +1457,11 @@
                     if (currentStep) {
                         updateDisplay(currentStep);
                         updatePauseButton(state.isPaused);
+                        // Mostrar el timer cuando se reanuda un progreso guardado
+                        $timerBox.classList.remove('hidden');
+                        $startMessage.classList.add('hidden');
+                        $playButton.classList.add('hidden');
+                        $fullControls.classList.remove('hidden');
                     }
                 }, 100);
             }
@@ -2621,6 +2626,7 @@
             $playButton.classList.add('hidden');
             $fullControls.classList.remove('hidden');
             $startMessage.classList.add('hidden');
+            $timerBox.classList.remove('hidden'); // Mostrar el timer
             updatePauseButton(false);
             $timerBox.classList.remove('text-gray-500');
             

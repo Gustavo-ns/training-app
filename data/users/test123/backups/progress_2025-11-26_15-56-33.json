@@ -1,0 +1,11 @@
+{
+    "currentStepIndex": 1,
+    "currentRoutineKey": "CORE",
+    "currentPhase": "CALENTAMIENTO",
+    "currentRound": 0,
+    "timer": 59,
+    "timestamp": "2025-11-26T15:56:30.925Z",
+    "source": "pause",
+    "savedAt": "2025-11-26T15:56:30+00:00",
+    "userId": "test123"
+}

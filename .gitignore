@@ -11,6 +11,7 @@ workout_data.json
 user_profile.json
 weight_history.json
 workout_progress.json
+data/user/
 
 # VSCode settings
 .vscode/

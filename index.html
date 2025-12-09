@@ -2105,19 +2105,18 @@
             // Solo pausar en el primer paso (calentamiento inicial) O cuando se carga progreso guardado
             if (state.currentStepIndex === 0 && !state.isLoading) {
                 // Primer paso: mostrar botón INICIAR y botón de saltar calentamiento
-                if (state.isPaused) {
-                    updatePauseButton(false);
-                    $timerBox.classList.add('text-gray-500');
-                    // Mostrar botón de saltar calentamiento si estamos en WARMUP
-                    const skipButton = document.getElementById('skip-warmup-button');
-                    if (currentStep && currentStep.phase === 'CALENTAMIENTO') {
-                        skipButton.classList.remove('hidden');
-                    } else {
-                        skipButton.classList.add('hidden');
-                    }
+                state.isPaused = true;
+                updatePauseButton(true);
+                $timerBox.classList.add('text-gray-500');
+                // Mostrar botón de saltar calentamiento si estamos en WARMUP
+                const skipButton = document.getElementById('skip-warmup-button');
+                if (currentStep && currentStep.phase === 'CALENTAMIENTO') {
+                    skipButton.classList.remove('hidden');
+                } else {
+                    skipButton.classList.add('hidden');
                 }
             } else if (!state.isLoading) {
-                // Pasos subsiguientes: continuar automáticamente (solo si no estamos cargando progreso)
+                // Pasos subsiguientes: continuar automáticamente (ejercicio o descanso)
                 state.isPaused = false;
                 updatePauseButton(false);
                 $timerBox.classList.remove('text-gray-500');
@@ -2169,11 +2168,10 @@
             // 5. GUARDAR PROGRESO (Automático)
             saveProgress('auto');
             
-            // 6. INICIAR TEMPORIZADOR (solo si no está pausado)
+            // 6. INICIAR TEMPORIZADOR (siempre que el entrenamiento esté activo)
+            // El temporizador debe avanzar automáticamente en ejercicios y descansos
+            clearInterval(state.interval);
             if (!state.isPaused) {
-                // Limpiar cualquier intervalo anterior antes de crear uno nuevo
-                clearInterval(state.interval);
-                
                 if (!currentStep.isRest) {
                     beep(880, 200, 0.7);
                 } else {

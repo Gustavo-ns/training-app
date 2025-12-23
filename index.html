@@ -299,6 +299,12 @@
                     </svg>
                     <span class="hidden sm:inline">PAUSAR</span>
                 </button>
+                <button onclick="skipRest()" id="skip-rest-button" class="hidden px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-semibold flex-grow sm:flex-grow-0 flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-5.414V7.414a1 1 0 011.707-.707l3 3a1 1 0 010 1.414l-3 3A1 1 0 019 12.586z"></path>
+                    </svg>
+                    <span class="hidden sm:inline">SALTAR DESCANSO</span>
+                </button>
                 <button onclick="nextStep()" class="px-6 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors shadow-lg font-semibold flex-grow sm:flex-grow-0 flex items-center justify-center gap-2">
                     <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M10.293 15.707a1 1 0 010-1.414L14.586 10l-4.293-4.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
@@ -1483,6 +1489,7 @@
         const $detailsLink = document.getElementById('details-link');
         const $secondaryControls = document.getElementById('secondary-controls');
         const $continueWorkoutButton = document.getElementById('continue-workout-button');
+        const $skipRestButton = document.getElementById('skip-rest-button');
 
         // --- FUNCIONES DE UI PARA BOTONES CON ICONOS ---
         function updatePauseButton(isPaused) {
@@ -2087,6 +2094,20 @@
             nextStep(true);
         }
 
+        window.skipRest = function() {
+            if (!state.isRunning) return;
+            if (!state.currentRoutineExercises || state.currentStepIndex < 0) return;
+            
+            const currentStep = state.currentRoutineExercises[state.currentStepIndex];
+            if (!currentStep || !currentStep.isRest) return;
+            
+            // Saltar inmediatamente el descanso actual
+            clearInterval(state.interval);
+            state.timer = 0;
+            updateDisplay(currentStep);
+            nextStep();
+        }
+
         window.nextStep = function(isNavigation = false) {
             clearInterval(state.interval);
 
@@ -2270,6 +2291,15 @@
             $phaseTitle.className = `text-xl font-medium uppercase tracking-widest ${step.style || 'ready-color'}`;
             
             let exerciseName = step.name;
+            
+            // Mostrar/ocultar botón de saltar descanso según el paso actual
+            if ($skipRestButton) {
+                if (step.isRest) {
+                    $skipRestButton.classList.remove('hidden');
+                } else {
+                    $skipRestButton.classList.add('hidden');
+                }
+            }
             
             // Mostrar próximo ejercicio en los últimos 5 segundos
             if (state.timer <= 5 && state.timer > 0 && !step.isRest) {

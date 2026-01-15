@@ -187,6 +187,10 @@
                 ▶️ Seguir Entrenando
             </button>
             
+            <button onclick="startWorkout('QUICK')" class="w-full py-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-lg font-bold text-lg">
+                ⚡ Entrenamiento Rápido (Express)
+            </button>
+            
             <button onclick="startTodaysWorkout()" class="w-full py-4 rounded-xl bg-primary hover:bg-orange-600 transition-colors shadow-lg font-bold text-lg">
                 🚀 Iniciar Entrenamiento
             </button>
@@ -1349,6 +1353,97 @@
                     "⚠️ No levantes mucho la cadera",
                     "⚠️ Mantén la fluidez"
                 ]
+            },
+            // ENTRENAMIENTO RÁPIDO
+            "Sentadillas (Piernas)": {
+                category: "fuerza",
+                equipment: "ninguno",
+                muscles: ["piernas", "glúteos"],
+                description: "Ejercicio fundamental para fortalecer el tren inferior",
+                instructions: [
+                    "1. Párate con los pies al ancho de los hombros",
+                    "2. Baja las caderas como si te fueras a sentar en una silla",
+                    "3. Mantén el pecho erguido y el peso en los talones",
+                    "4. Sube con fuerza a la posición inicial",
+                    "5. Mantén las rodillas alineadas con los pies"
+                ],
+                tips: [
+                    "✅ Respira hondo al bajar y exhala al subir",
+                    "✅ Mantén el abdomen contraído",
+                    "⚠️ No dejes que las rodillas se cierren"
+                ]
+            },
+            "Flexiones (Pecho/Hombros)": {
+                category: "fuerza",
+                equipment: "ninguno",
+                muscles: ["pecho", "hombros", "tríceps"],
+                description: "Ejercicio de empuje para el tren superior",
+                instructions: [
+                    "1. Colócate en posición de plancha alta con las manos algo más anchas que los hombros",
+                    "2. Baja el cuerpo hasta que el pecho casi toque el suelo",
+                    "3. Mantén el cuerpo en línea recta sin arquear la espalda",
+                    "4. Empuja el suelo para volver a la posición inicial",
+                    "5. Los codos deben ir hacia atrás en un ángulo de 45°"
+                ],
+                tips: [
+                    "✅ Contrae glúteos y abdomen durante todo el movimiento",
+                    "✅ Si es muy difícil, apoya las rodillas en el suelo",
+                    "⚠️ No dejes caer la cabeza"
+                ]
+            },
+            "Plancha (Core)": {
+                category: "core",
+                equipment: "ninguno",
+                muscles: ["abdomen", "lumbar", "estabilidad"],
+                description: "Fortalecimiento isométrico de la zona media",
+                instructions: [
+                    "1. Apóyate en los antebrazos y las puntas de los pies",
+                    "2. Mantén el cuerpo recto como una tabla desde los talones a la cabeza",
+                    "3. Contrae fuerte el abdomen y evita que la cadera se hunda",
+                    "4. Mantén la mirada hacia el suelo para alinear el cuello",
+                    "5. Respira de manera pausada y profunda"
+                ],
+                tips: [
+                    "✅ Imagina que empujas el suelo con tus codos",
+                    "✅ Mantén los glúteos apretados",
+                    "⚠️ No aguantes la respiración"
+                ]
+            },
+            "Remo (Espalda/Bíceps)": {
+                category: "fuerza",
+                equipment: "mancuernas / banda elástica",
+                muscles: ["espalda", "bíceps", "deltoides posterior"],
+                description: "Ejercicio de tracción esencial para la postura y fuerza de espalda",
+                instructions: [
+                    "1. Inclina el tronco hacia adelante unos 45° manteniendo la espalda plana",
+                    "2. Flexiona ligeramente las rodillas",
+                    "3. Tira de los pesos hacia tus caderas, llevando los codos hacia atrás",
+                    "4. Aprieta las escápulas en el punto de máxima contracción",
+                    "5. Baja los pesos de forma controlada"
+                ],
+                tips: [
+                    "✅ El movimiento debe nacer de los codos y la espalda, no solo de las manos",
+                    "✅ Mantén el core firme para proteger la zona lumbar",
+                    "⚠️ No des tirones con el cuerpo"
+                ]
+            },
+            "Curl de Bíceps (Aislamiento opcional)": {
+                category: "aislamiento",
+                equipment: "mancuernas",
+                muscles: ["bíceps"],
+                description: "Trabajo localizado para los flexores del brazo",
+                instructions: [
+                    "1. Sujeta las mancuernas a los lados con las palmas hacia adelante",
+                    "2. Flexiona los codos llevando las pesas hacia los hombros sin mover el torso",
+                    "3. Aprieta el bíceps al final del movimiento",
+                    "4. Baja lentamente hasta estirar casi por completo",
+                    "5. Mantén los hombros relajados y codos pegados al cuerpo"
+                ],
+                tips: [
+                    "✅ No uses balanceo para subir el peso",
+                    "✅ Controla la bajada para máxima efectividad",
+                    "⚠️ No bloquees los codos al bajar del todo"
+                ]
             }
         };
 
@@ -1407,6 +1502,14 @@
                 "Puente de Glúteos",
                 "Superman (Lumbares)",
                 "Escaladores Cruzados",
+            ],
+            
+            QUICK_EXERCISES: [
+                "Sentadillas (Piernas)",
+                "Flexiones (Pecho/Hombros)",
+                "Plancha (Core)",
+                "Remo (Espalda/Bíceps)",
+                "Curl de Bíceps (Aislamiento opcional)",
             ]
         };
 
@@ -1440,7 +1543,8 @@
                 'B': 'Rutina B - Cardio Intenso', 
                 'CORE': 'Rutina C - Full Body & Core',
                 'D': 'Rutina D - Power & Explosividad',
-                'E': 'Rutina E - Resistencia & Agilidad'
+                'E': 'Rutina E - Resistencia & Agilidad',
+                'QUICK': 'Entrenamiento Rápido (Express)'
             };
             return routineNames[routineKey];
         }
@@ -1554,11 +1658,11 @@
         }
         
         // Función para generar la estructura completa del circuito
-        function createCircuitSteps(exercises, workTime, restTime) {
+        function createCircuitSteps(exercises, workTime, restTime, numRounds = ROUNDS) {
             const steps = [];
             const bigRestTime = 60; // Descanso grande de 60 segundos entre rondas
             
-            for (let r = 0; r < ROUNDS; r++) {
+            for (let r = 0; r < numRounds; r++) {
                 for (let i = 0; i < exercises.length; i++) {
                     // Paso de TRABAJO
                     steps.push({
@@ -1570,7 +1674,7 @@
                     });
                     
                     // Paso de DESCANSO (solo si no es el último ejercicio del último round)
-                    if (!(r === ROUNDS - 1 && i === exercises.length - 1)) {
+                    if (!(r === numRounds - 1 && i === exercises.length - 1)) {
                         const isBigRest = (i === exercises.length - 1); // Es descanso grande si es fin de ronda
                         steps.push({
                             name: isBigRest ? `DESCANSO GRANDE (Fin Ronda ${r + 1})` : `DESCANSO (Próximo: ${exercises[i+1] || exercises[0]})`,
@@ -1592,6 +1696,8 @@
         // Función auxiliar para construir el array de ejercicios de la rutina completa
         function buildRoutine(key) {
             let mainExercises;
+            let roundsToPerform = ROUNDS;
+            
             switch (key) {
                 case 'A':
                     mainExercises = WORKOUT_STRUCTURE.CIRCUITO_A_EXERCISES;
@@ -1608,11 +1714,20 @@
                 case 'E':
                     mainExercises = WORKOUT_STRUCTURE.CIRCUITO_E_EXERCISES;
                     break;
+                case 'QUICK':
+                    mainExercises = WORKOUT_STRUCTURE.QUICK_EXERCISES;
+                    roundsToPerform = 2; // Express: 2 rondas
+                    break;
                 default:
                     return [];
             }
             
-            const mainCircuitSteps = createCircuitSteps(mainExercises, key === 'CORE' ? CORE_WORK_TIME : WORK_TIME, key === 'CORE' ? CORE_REST_TIME : REST_TIME);
+            const mainCircuitSteps = createCircuitSteps(
+                mainExercises, 
+                key === 'CORE' ? CORE_WORK_TIME : WORK_TIME, 
+                key === 'CORE' ? CORE_REST_TIME : REST_TIME,
+                roundsToPerform
+            );
 
             return [
                 ...WORKOUT_STRUCTURE.WARMUP.map(e => ({...e, phase: 'CALENTAMIENTO'})),
@@ -2698,6 +2813,9 @@
                         </button>
                         <button onclick="selectRoutine('E')" class="w-full py-3 rounded-lg bg-teal-500 hover:bg-teal-600 transition-colors text-white font-semibold">
                             Rutina E - Resistencia & Agilidad
+                        </button>
+                        <button onclick="selectRoutine('QUICK')" class="w-full py-3 rounded-lg bg-indigo-600 hover:bg-indigo-700 transition-colors text-white font-semibold">
+                            ⚡ Entrenamiento Rápido (Express)
                         </button>
                         <button onclick="closeRoutineSelector()" class="w-full py-2 rounded-lg bg-gray-600 hover:bg-gray-500 transition-colors text-gray-300">
                             Cancelar
